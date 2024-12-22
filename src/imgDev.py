@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 # %% Import image
-A = imread(os.path.join("..", "data", "raw", "dog.jpeg"))
+A = imread(os.path.join("..", "demo-project", "data", "raw", "dog.jpeg"))
 X = np.mean(A, -1)  # convert RGB to grayscale
 img = plt.imshow(X)
 
