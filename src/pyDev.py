@@ -1,6 +1,7 @@
 # %% import libraries
 import numpy as np
-import pandas as pd
+
+# import pandas as pd
 import matplotlib.pyplot as plt
 
 # %% print version
@@ -44,7 +45,7 @@ xtilde1 = VT.T @ np.linalg.inv(np.diag(S)) @ U.T @ b
 xtilde2 = np.linalg.pinv(a) @ b """
 
 # %% PCA example on noisy cloud data
-
+""" 
 # Generate noisy cloud of data
 xC = np.array([2, 1])  # Center of data (mean)
 sig = np.array([2, 0.5])  # Principal axes
@@ -82,4 +83,41 @@ ax2.plot(
 ax2.plot(
     Xavg[0] + 3 * Xstd[0, :], Xavg[1] + 3 * Xstd[1, :], "-", color="r", linewidth=3
 )
+plt.show() """
+
+# %% Compare various thresholding approaches on noisy low-rank data
+
+# Generate underlying low-rank data
+t = np.arange(-3, 3, 0.01)
+Utrue = np.array([np.cos(17 * t) * np.exp(-(t**2)), np.sin(11 * t)]).T
+Strue = np.array([[2, 0], [0, 0.5]])
+Vtrue = np.array([np.sin(5 * t) * np.exp(-(t**2)), np.cos(13 * t)]).T
+X = Utrue @ Strue @ Vtrue.T
+
+f1 = plt.figure()
+ax1 = f1.add_subplot(221)
+ax2 = f1.add_subplot(222)
+ax3 = f1.add_subplot(223)
+ax4 = f1.add_subplot(224)
+ax1.imshow(X)
+
+# Contaminate signal with noise
+sigma = 1
+Xnoisy = X + sigma * np.random.randn(*X.shape)
+ax2.imshow(Xnoisy)
+
+# Truncate using optimal hard threshold
+U, S, VT = np.linalg.svd(Xnoisy, full_matrices=0)
+N = Xnoisy.shape[0]
+cutoff = (4 / np.sqrt(3)) * np.sqrt(N) * sigma  # Hard threshold
+r = np.max(np.where(S > cutoff))  # Keep modes w/ S > cutoff
+Xclean = U[:, : (r + 1)] @ np.diag(S[: (r + 1)]) @ VT[: (r + 1), :]
+ax3.imshow(Xclean)
+
+# Truncate to keep 90% of cumulative sum
+cdS = np.cumsum(S) / np.sum(S)  # Cumulative energy
+r90 = np.min(np.where(cdS > 0.90))  # Find r to keep 90% sum
+
+X90 = U[:, : (r90 + 1)] @ np.diag(S[: (r90 + 1)]) @ VT[: (r90 + 1), :]
+ax4.imshow(X90)
 plt.show()
