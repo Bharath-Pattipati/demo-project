@@ -74,7 +74,7 @@ Xstd = (
 )  # Matrix Multiplication
 
 # First three standard deviation ellipsoids
-ax2.plot(X[0, :], X[1, :], "o", color="g")  # Plot data
+ax2.plot(X[0, :], X[1, :], "o", color="b")  # Plot data
 ax2.plot(Xavg[0] + Xstd[0, :], Xavg[1] + Xstd[1, :], "-", color="r", linewidth=3)
 ax2.plot(
     Xavg[0] + 2 * Xstd[0, :], Xavg[1] + 2 * Xstd[1, :], "-", color="r", linewidth=3
