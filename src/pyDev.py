@@ -3,6 +3,15 @@ import numpy as np
 
 # import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.integrate import odeint
+
+
+def rhsHeat(uhat_ri, t, kappa, a):
+    uhat = uhat_ri[:N] + (1j) * uhat_ri[N:]
+    d_uhat = -(a**2) * (np.power(kappa, 2)) * uhat
+    d_uhat_ri = np.concatenate((d_uhat.real, d_uhat.imag)).astype("float64")
+    return d_uhat_ri
+
 
 # %% print version
 """ print(np.__version__)
@@ -86,7 +95,7 @@ ax2.plot(
 plt.show() """
 
 # %% Compare various thresholding approaches on noisy low-rank data
-
+""" 
 # Generate underlying low-rank data
 t = np.arange(-3, 3, 0.01)
 Utrue = np.array([np.cos(17 * t) * np.exp(-(t**2)), np.sin(11 * t)]).T
@@ -120,4 +129,42 @@ r90 = np.min(np.where(cdS > 0.90))  # Find r to keep 90% sum
 
 X90 = U[:, : (r90 + 1)] @ np.diag(S[: (r90 + 1)]) @ VT[: (r90 + 1), :]
 ax4.imshow(X90)
+plt.show()
+ """
+
+# %% 1D heat equation using Fourier transform
+a = 1  # Thermal diffusivity constant
+L = 100  # Length of domain
+N = 1000  # Number of discretization points
+dx = L / N
+x = np.arange(-L / 2, L / 2, dx)  # Define x domain
+
+# Define discrete wavenumbers
+kappa = 2 * np.pi * np.fft.fftfreq(N, d=dx)
+
+# Initial condition
+u0 = np.zeros_like(x)
+u0[int((L / 2 - L / 10) / dx) : int((L / 2 + L / 10) / dx)] = 1
+u0hat = np.fft.fft(u0)
+
+# Simulate in Fourier frequency domain
+dt = 0.1
+t = np.arange(0, 10, dt)
+u0hat_ri = np.concatenate((u0hat.real, u0hat.imag)).astype("float64")
+uhat_ri = odeint(rhsHeat, u0hat_ri, t, args=(kappa, a))
+uhat = uhat_ri[:, :N] + (1j) * uhat_ri[:, N:]
+u = np.zeros_like(uhat)
+for k in range(len(t)):
+    u[k, :] = np.fft.ifft(uhat[k, :])
+u = u.real
+
+# waterfall plot
+X, T = np.meshgrid(x, t)
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.plot_surface(X, T, u, cmap="viridis")
+
+ax.set_xlabel("x")
+ax.set_ylabel("t")
+ax.set_zlabel("u")
 plt.show()
