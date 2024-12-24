@@ -133,7 +133,7 @@ plt.show()
  """
 
 # %% 1D heat equation using Fourier transform
-a = 1  # Thermal diffusivity constant
+""" a = 1  # Thermal diffusivity constant
 L = 100  # Length of domain
 N = 1000  # Number of discretization points
 dx = L / N
@@ -176,4 +176,17 @@ plt.xlabel("x")
 plt.ylabel("t")
 plt.colorbar(label="u")
 plt.title("X-T Diagram")
+plt.show() """
+
+# %% Spectrogram of quadractic chirp
+dt = 0.001
+t = np.arange(0, 2, dt)
+f0 = 50
+f1 = 250
+t1 = 2
+x = np.cos(2 * np.pi * t * (f0 + (f1 - f0) * np.power(t, 2) / (3 * t1**2)))
+plt.specgram(x, NFFT=128, Fs=1 / dt, noverlap=120, cmap="jet")
+plt.xlabel("Time (s)")
+plt.ylabel("Frequency (Hz)")
+plt.title("Spectrogram of Quadratic Chirp")
 plt.show()
