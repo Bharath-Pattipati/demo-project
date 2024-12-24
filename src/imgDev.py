@@ -48,6 +48,9 @@ fig, axes = plt.subplots(2, 2, figsize=(10, 10))
 axes = axes.flatten()
 i = 0
 
+# Several versions of the compressed image for various compression ratios
+# Even with an aggressive truncation, retaining only 0.5% of the DWT coefficients, the coarse
+# features of the image are retained
 for keep in (0.1, 0.05, 0.01, 0.005):
     ax = axes[i]
     thresh = Csort[int(np.floor((1 - keep) * len(Csort)))]
