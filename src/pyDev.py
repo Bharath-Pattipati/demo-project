@@ -3,15 +3,14 @@ import numpy as np
 
 # import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.integrate import odeint
+# from scipy.integrate import odeint
 
-
-def rhsHeat(uhat_ri, t, kappa, a):
+# %% Heat equation RHS
+""" def rhsHeat(uhat_ri, t, kappa, a):
     uhat = uhat_ri[:N] + (1j) * uhat_ri[N:]
     d_uhat = -(a**2) * (np.power(kappa, 2)) * uhat
     d_uhat_ri = np.concatenate((d_uhat.real, d_uhat.imag)).astype("float64")
-    return d_uhat_ri
-
+    return d_uhat_ri """
 
 # %% print version
 """ print(np.__version__)
