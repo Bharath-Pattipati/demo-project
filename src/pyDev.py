@@ -168,3 +168,12 @@ ax.set_xlabel("x")
 ax.set_ylabel("t")
 ax.set_zlabel("u")
 plt.show()
+
+# X-T Contour plot
+plt.figure()
+plt.contourf(X, T, u, 20, cmap="inferno")
+plt.xlabel("x")
+plt.ylabel("t")
+plt.colorbar(label="u")
+plt.title("X-T Diagram")
+plt.show()
