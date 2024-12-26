@@ -1,5 +1,6 @@
 # %% import libraries
 import numpy as np
+from scipy.optimize import minimize
 
 # import pandas as pd
 import matplotlib.pyplot as plt
@@ -178,7 +179,7 @@ plt.title("X-T Diagram")
 plt.show() """
 
 # %% Spectrogram of quadractic chirp
-dt = 0.001
+""" dt = 0.001
 t = np.arange(0, 2, dt)
 f0 = 50
 f1 = 250
@@ -188,4 +189,29 @@ plt.specgram(x, NFFT=128, Fs=1 / dt, noverlap=120, cmap="jet")
 plt.xlabel("Time (s)")
 plt.ylabel("Frequency (Hz)")
 plt.title("Spectrogram of Quadratic Chirp")
+plt.show() """
+
+# %% L1-norm for robust statical regression
+x = np.sort(4 * (np.random.rand(25, 1) - 0.5), axis=0)  # data
+b = 0.9 * x + 0.1 * np.random.randn(len(x), 1)  # Noisy line y=ax
+atrue = np.linalg.lstsq(x, b, rcond=None)[0]  # Least-squares a
+b[-1] = -5.5  # Introduce outlier
+acorrupt = np.linalg.lstsq(x, b, rcond=None)[0]  # New slope
+
+plt.plot(x, b, "o", label="Data")
+plt.plot(x, x * atrue, "k", label="True LS fit")
+plt.plot(x, x * acorrupt, "r", label="L2-norm fit")
+plt.legend()
+
+
+## L1 optimization to reject outlier
+def L1_norm(a):
+    return np.linalg.norm(a * x - b, ord=1)
+
+
+a0 = acorrupt.flatten()  # initialize to L2 solution
+res = minimize(L1_norm, a0)
+aL1 = res.x[0]  # aL1 is robust
+plt.plot(x, x * aL1, "g--", label="L1-norm fit")
+plt.legend()
 plt.show()
