@@ -81,7 +81,7 @@ main()  # call the main function """
 
 
 # %% House
-def main():
+""" def main():
     name = input("What's your name? ").strip().title()
     house(name)
 
@@ -98,6 +98,92 @@ def house(person):
             print("Hufflepuff")
         case _:
             print("Muggle")
+
+
+main()  # call the main function """
+
+# %% Loops example (CAT)
+""" i = 0
+while i < 3:
+    print("Meow!")
+    i += 1 """
+
+""" n = int(input("How many times should the CAT talk? "))
+for _ in range(n):
+    print("Meow!")
+
+print("Purr!\n" * n, end="") """
+
+# %% Hogwarts Example (LOOPS, LIST, DICTIONARY)
+""" students = ["Harry", "Ron", "Hermione", "Draco", "Luna", "Cedric"]
+houses = [
+    "Gryffindor",
+    "Gryffindor",
+    "Gryffindor",
+    "Slytherin",
+    "Ravenclaw",
+    "Hufflepuff",
+]
+
+for student in students:  # anything that is iterable
+    print(f"{student} belongs to {houses[students.index(student)]}") """
+
+# Dictionary: key-value pairs
+""" students = {
+    "Harry": "Gryffindor",
+    "Ron": "Gryffindor",
+    "Hermione": "Gryffindor",
+    "Draco": "Slytherin",
+    "Luna": "Ravenclaw",
+    "Cedric": "Hufflepuff",
+}
+
+# print(students["Harry"])  # access the value using the key
+
+# Dictionary loops over the keys by default
+for student, house in students.items():  # iterate over the dictionary
+    print(f"{student} belongs to {house}") """
+
+# List of dictionaries
+""" students = [
+    {"name": "Harry", "house": "Gryffindor", "patronus": "stag"},
+    {"name": "Ron", "house": "Gryffindor", "patronus": "Jack Russell Terrier"},
+    {"name": "Hermione", "house": "Gryffindor", "patronus": "otter"},
+    {"name": "Draco", "house": "Slytherin", "patronus": "dragon"},
+    {"name": "Luna", "house": "Ravenclaw", "patronus": "hare"},
+    {"name": "Cedric", "house": "Hufflepuff", "patronus": "badger"},
+]
+
+for student in students:
+    print(f"{student['name']}, {student['house']}, {student['patronus']}")
+ """
+
+
+# %% MARIO GAME
+def main():
+    height = get_height()
+    #    draw_pyramid(height)
+    print_square(height)
+
+
+def get_height():
+    while True:
+        try:
+            height = int(input("Height (1 to 10): "))
+            if 1 <= height <= 10:
+                return height
+        except ValueError:
+            pass
+
+
+""" def draw_pyramid(height):
+    for i in range(height):
+        print(" " * (height - i - 1) + "#" * (i + 1)) """
+
+
+def print_square(size):
+    for i in range(size):
+        print("#" * size)
 
 
 main()  # call the main function
