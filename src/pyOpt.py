@@ -3,12 +3,12 @@ import numpy as np
 
 # from scipy.optimize import minimize
 import matplotlib.pyplot as plt
-import time
-from scipy.fftpack import dct, idct
+# import time
+# from scipy.fftpack import dct, idct
 
 # CoSaMP: https://github.com/rfmiotto/CoSaMP
 # Original Needell and Tropp 2008 paper: https://arxiv.org/abs/0803.2392
-from cosamp.cosamp import cosamp
+# from cosamp.cosamp import cosamp
 
 # %% Sparse solutions to under-determined linear system.
 # Under-determined linear system: y = Theta * s i.e. more unknowns than knowns
@@ -56,7 +56,7 @@ plt.show() """
 # %% Recovering an Audio Signal from Sparse Measurements
 # Compressed sensing of two-tone cosine signal.
 
-tic = time.time()
+""" tic = time.time()
 ## Generate signal, DCT of signal
 n = 4096  # points in high resolution signal
 f1 = 100  # first-frequency (Hz)
@@ -107,4 +107,27 @@ ax[1].set_xlim(0, 1000)
 ax[1].set_title("Power Spectral Density")
 
 plt.tight_layout()
+plt.show() """
+
+
+# %% Function Visualization
+def func2D(x, y):
+    return x**2 + 3 * y**2
+
+
+# visualization of function along x and y
+x = np.linspace(-3, 3, 100)
+y = np.linspace(-3, 3, 100)
+X, Y = np.meshgrid(x, y)
+Z = func2D(X, Y)
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.plot_surface(X, Y, Z, cmap="viridis")
+
+ax.set_xlabel("X")
+ax.set_ylabel("Y")
+ax.set_zlabel("Z")
+ax.set_title("3D Visualization of func2D")
+
 plt.show()
