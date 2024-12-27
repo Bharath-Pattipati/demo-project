@@ -1,7 +1,7 @@
 # %% Import libraries
 import numpy as np
 
-# from scipy.optimize import minimize
+from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 # import time
 # from scipy.fftpack import dct, idct
@@ -111,7 +111,7 @@ plt.show() """
 
 
 # %% Function Visualization
-def func2D(x, y):
+""" def func2D(x, y):
     return x**2 + 3 * y**2
 
 
@@ -130,4 +130,39 @@ ax.set_ylabel("Y")
 ax.set_zlabel("Z")
 ax.set_title("3D Visualization of func2D")
 
+plt.show() """
+
+# %% Solutions for an over-determined linear system
+n = 500
+m = 100
+A = np.random.rand(n, m)
+b = np.random.rand(n)
+
+xdag = np.linalg.pinv(A) @ b
+lam = np.array([0, 0.1, 0.5])
+
+
+def reg_norm(x, A, b, lam):
+    return np.linalg.norm(A @ x - b, ord=2) + lam * np.linalg.norm(x, ord=1)
+
+
+f1, ax1 = plt.subplots(3, 1, figsize=(10, 10))
+f2, ax2 = plt.subplots(1, 3, figsize=(5, 5))
+for j in range(3):
+    res = minimize(reg_norm, x0=xdag, args=(A, b, lam[j]))
+    x = res.x
+
+    ax1[j].bar(np.arange(m), x)
+    ax1[j].set_title(f"Regularization parameter: {lam[j]}")
+    ax1[j].set_xlabel("Index")
+    ax1[j].set_ylabel(r"$x_j$")
+
+    ax2[j].hist(x, bins=20)
+    ax2[j].set_title(f"$\lambda$ = {lam[j]}")
+    ax2[j].set_ylabel(r"Hist$(x_j)$")
+    ax2[j].set_xlim(-0.1, 0.1)
+
+plt.tight_layout()
 plt.show()
+
+# %%
