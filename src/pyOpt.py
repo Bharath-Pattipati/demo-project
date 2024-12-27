@@ -1,14 +1,16 @@
 # %% Import libraries
 import numpy as np
 
-from scipy.optimize import minimize
-import matplotlib.pyplot as plt
+# from scipy.optimize import minimize
+# import matplotlib.pyplot as plt
 # import time
 # from scipy.fftpack import dct, idct
 
 # CoSaMP: https://github.com/rfmiotto/CoSaMP
 # Original Needell and Tropp 2008 paper: https://arxiv.org/abs/0803.2392
 # from cosamp.cosamp import cosamp
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.arima.model import ARIMA
 
 # %% Sparse solutions to under-determined linear system.
 # Under-determined linear system: y = Theta * s i.e. more unknowns than knowns
@@ -133,8 +135,8 @@ ax.set_title("3D Visualization of func2D")
 plt.show() """
 
 # %% Solutions for an over-determined linear system
-n = 500
-m = 100
+""" n = 500  # constraints or equations
+m = 100  # unknowns
 A = np.random.rand(n, m)
 b = np.random.rand(n)
 
@@ -158,11 +160,40 @@ for j in range(3):
     ax1[j].set_ylabel(r"$x_j$")
 
     ax2[j].hist(x, bins=20)
-    ax2[j].set_title(f"$\lambda$ = {lam[j]}")
+    ax2[j].set_title(f"{lam[j]}")
     ax2[j].set_ylabel(r"Hist$(x_j)$")
     ax2[j].set_xlim(-0.1, 0.1)
 
 plt.tight_layout()
-plt.show()
+plt.show() """
 
-# %%
+# %% Model Selection based on information criteria
+arparams = np.array([-4, 0.2, 0.5])  # autoregressive lag polynomial
+maparams = np.array([1])  # moving average lag polynomial
+T = 1000
+arma_process = ArmaProcess(arparams, maparams)
+y = arma_process.generate_sample(T, scale=2)
+
+logL = np.zeros(3)  # log likelihood vector
+aic = np.zeros(3)  # AIC vector
+bic = np.zeros(3)  # BIC vector
+hqic = np.zeros(3)  # HQIC vector
+
+for j in range(3):
+    # 1, 2 and 3 time-delayed AR model
+    model = ARIMA(y, order=(j + 1, 0, 0), trend="c")  # model order = (p, d, q)
+    res = model.fit()
+
+    logL[j] = res.llf
+    aic[j] = res.aic
+    bic[j] = res.bic
+    hqic[j] = res.hqic
+
+print(f"AIC: {aic}")
+print(f"BIC: {bic}")
+print(f"HQIC: {hqic}")
+
+# best model, the one with both the lowest AIC and BIC scores,
+# is the second model, which has two time delays.
+
+# %% Future Examples
