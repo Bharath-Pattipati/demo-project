@@ -1,4 +1,11 @@
 # %% Import libraries
+# from random import choice, randint, shuffle
+# import statistics as stats
+import sys
+# import json
+
+# import cowsay
+import requests
 
 # %% Functions and Variables Examples
 """# combined functions (readability, length of line, simplify, etc.)
@@ -190,7 +197,7 @@ def print_square(size):
 main()  # call the main function """
 
 # %% Exception Handling
-while True:  # run infinite loop until a valid number is entered
+""" while True:  # run infinite loop until a valid number is entered
     try:
         x = int(input("Enter a number: "))
     except ValueError:
@@ -198,4 +205,49 @@ while True:  # run infinite loop until a valid number is entered
     else:  # executes if no exception is raised
         break
 
-print(f"x = {x}")
+print(f"x = {x}") """
+
+# %% Generate
+
+""" coin = choice(["heads", "tails"])  # randomly select an item from the list
+print(coin)
+
+dice = randint(1, 10)  # randomly select an integer between 1 and 6
+print(dice)
+
+cards = ["jack", "queen", "king"]  # create a list of 52 cards
+shuffle(cards)  # shuffle the list
+print(cards)  # print cards
+
+print(stats.mean([1, 2, 3, 4, 5]))  # calculate the mean of the list """
+
+# %% System Module
+# Execute in terminal using: python src/pyCS50p.py "Name"
+# print("Hello, my name is", sys.argv[0])  # print the name of the script
+
+""" if len(sys.argv) < 2:
+    sys.exit("Too few arguments")
+
+for arg in sys.argv[1:]:  # slice the list to exclude the script name
+    print(f"Hello, {arg}!") """
+
+# %% SAY
+# Terminal command: python src/pyCS50p.py Moooo
+""" if len(sys.argv) == 2:
+    cowsay.cow("Hello, " + sys.argv[1]) """
+
+# %% Website Requests: iTUNES API
+# JSON: JAvascript Object Notation
+# API: Application Programming Interface
+# URL: Uniform Resource Locator
+# URI: Uniform Resource Identifier
+
+if len(sys.argv) != 2:
+    sys.exit("Usage in Terminal: python src/pyCS50p.py <artist>")
+
+response = requests.get(f"https://itunes.apple.com/search?term={sys.argv[1]}&limit=10")
+# print(json.dumps(response.json(), indent=2))
+
+o = response.json()
+for i in o["results"]:
+    print(i["trackName"], i["releaseDate"])
