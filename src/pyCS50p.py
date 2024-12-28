@@ -160,7 +160,7 @@ for student in students:
 
 
 # %% MARIO GAME
-def main():
+""" def main():
     height = get_height()
     #    draw_pyramid(height)
     print_square(height)
@@ -176,9 +176,10 @@ def get_height():
             pass
 
 
+"""
 """ def draw_pyramid(height):
     for i in range(height):
-        print(" " * (height - i - 1) + "#" * (i + 1)) """
+        print(" " * (height - i - 1) + "#" * (i + 1)) 
 
 
 def print_square(size):
@@ -186,4 +187,15 @@ def print_square(size):
         print("#" * size)
 
 
-main()  # call the main function
+main()  # call the main function """
+
+# %% Exception Handling
+while True:  # run infinite loop until a valid number is entered
+    try:
+        x = int(input("Enter a number: "))
+    except ValueError:
+        print("x is not an Integer")
+    else:  # executes if no exception is raised
+        break
+
+print(f"x = {x}")
