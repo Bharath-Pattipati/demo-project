@@ -1,11 +1,14 @@
+"""
+CS50p Course: Introduction to Programming with Python
+"""
 # %% Import libraries
 # from random import choice, randint, shuffle
 # import statistics as stats
-import sys
+# import sys
 # import json
 
 # import cowsay
-import requests
+# import requests
 
 # %% Functions and Variables Examples
 """# combined functions (readability, length of line, simplify, etc.)
@@ -242,7 +245,7 @@ for arg in sys.argv[1:]:  # slice the list to exclude the script name
 # URL: Uniform Resource Locator
 # URI: Uniform Resource Identifier
 
-if len(sys.argv) != 2:
+""" if len(sys.argv) != 2:
     sys.exit("Usage in Terminal: python src/pyCS50p.py <artist>")
 
 response = requests.get(f"https://itunes.apple.com/search?term={sys.argv[1]}&limit=10")
@@ -250,4 +253,18 @@ response = requests.get(f"https://itunes.apple.com/search?term={sys.argv[1]}&lim
 
 o = response.json()
 for i in o["results"]:
-    print(i["trackName"], i["releaseDate"])
+    print(i["trackName"], i["releaseDate"]) """
+
+
+# %% Unit Testing for Calculator written in testCalculator.py
+def main():
+    x = int(input("What's x? "))
+    print("x squared is", square(x))
+
+
+def square(n):
+    return n * n
+
+
+if __name__ == "__main__":
+    main()  # call the main function
