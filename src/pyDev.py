@@ -1,10 +1,14 @@
+"""
+Examples from book "Data-Driven Science and Engineering" by Steven L. Brunton and J. Nathan Kutz
+"""
+
 # %% import libraries
 import numpy as np
-from scipy.optimize import minimize
+# from scipy.optimize import minimize
 
 # import pandas as pd
 import matplotlib.pyplot as plt
-# from scipy.integrate import odeint
+from scipy.integrate import odeint
 
 # %% Heat equation RHS
 """ def rhsHeat(uhat_ri, t, kappa, a):
@@ -192,7 +196,7 @@ plt.title("Spectrogram of Quadratic Chirp")
 plt.show() """
 
 # %% L1-norm for robust statical regression
-x = np.sort(4 * (np.random.rand(25, 1) - 0.5), axis=0)  # data
+""" x = np.sort(4 * (np.random.rand(25, 1) - 0.5), axis=0)  # data
 b = 0.9 * x + 0.1 * np.random.randn(len(x), 1)  # Noisy line y=ax
 atrue = np.linalg.lstsq(x, b, rcond=None)[0]  # Least-squares a
 b[-1] = -5.5  # Introduce outlier
@@ -214,4 +218,31 @@ res = minimize(L1_norm, a0)
 aL1 = res.x[0]  # aL1 is robust
 plt.plot(x, x * aL1, "g--", label="L1-norm fit")
 plt.legend()
+plt.show() """
+
+
+# %% Data-driven dynamical systems
+# Lorenz system
+def lorenz(x_y_z, t0, sigma=10, beta=8 / 3, rho=28):
+    x, y, z = x_y_z
+    return [sigma * (y - x), x * (rho - z) - y, x * y - beta * z]
+
+
+beta = 8 / 3
+sigma = 10
+rho = 28
+x0 = (0, 1, 20)
+dt = 0.001
+t = np.arange(0, 50 + dt, dt)
+x_t = odeint(lorenz, x0, t, rtol=10 ** (-12), atol=10 ** (-12) * np.ones_like(x0))
+x, y, z = x_t.T
+
+# 3D plot of x, y, z
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.plot(x, y, z, linewidth=1)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+plt.title("Lorenz Attractor")
 plt.show()

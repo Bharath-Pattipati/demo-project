@@ -11,8 +11,29 @@
 
 [2] [Pysensors](https://github.com/dynamicslab/pysensors) python package for sparse sensor placement.
 
+
 ### Data Sources
 [1] [Kaggle](https://www.kaggle.com/organizations/uciml/datasets) UCI Machine Learning 
 
+
+
+### Libraries
+Open-source libraries developed for data-driven dynamical systems:
+
+[1] [PyDMD](https://github.com/mathLab/PyDMD), Python package designed for Dynamic Mode Decomposition (DMD).
+
+[2] [PySINDy](https://github.com/dynamicslab/pysindy), sparse regression package with several implementations for the Sparse Identification of Nonlinear Dynamical systems (SINDy).
+
+[3] [PyKoopman](https://github.com/dynamicslab/pykoopman), Python package for computing data-driven approximations to the Koopman operator.
+
+[4] [Data-driven dynamical systems toolbox](https://github.com/sklus/d3s), methods for the approximation of transfer operators and their eigenfunctions as well as methods for learning the governing equations from data.
+
+[5] [Deeptime](https://github.com/deeptime-ml/deeptime), Python library offering various tools to estimate dynamical models based on time-series data.
+
+[6] [SindyAutoencoders](https://github.com/kpchamp/SindyAutoencoders), Code for the paper "[Data-driven discovery of coordinates and governing equations](https://arxiv.org/abs/1904.02107)" by Kathleen Champion, Bethany Lusch, J. Nathan Kutz, and Steven L. Brunton.
+
+[7] [PINN ODE Tutorial](https://github.com/PML-UCF/pinn_ode_tutorial), Python implementation of ODE Solvers using Hybrid PINNs.
+
+[8] [SR3](https://github.com/UW-AMO/sr3-matlab): Sparse Relaxed Regularized Regression in MATLAB
 
 --------
