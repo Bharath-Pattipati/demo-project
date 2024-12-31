@@ -4,6 +4,7 @@ import seaborn as sns  # advanced plotting
 import matplotlib.pyplot as plt  # basic plotting
 import os
 from sklearn.preprocessing import LabelEncoder
+# from sklearn.cluster import KMeans
 
 # %% Import the data: https://www.kaggle.com/datasets/uciml/iris/data
 # iris = pd.read_csv(os.path.join("..", "data", "raw", "iris.csv"))
@@ -41,3 +42,6 @@ ax.set_xlabel("Sepal Length (cm)")
 ax.set_ylabel("Sepal Width (cm)")
 ax.set_zlabel("Petal Length (cm)")
 plt.show()
+
+# %% K-means clustering
+# kmeans = KMeans(n_clusters=2, random_state=0).fit(Y)
