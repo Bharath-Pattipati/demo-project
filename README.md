@@ -2,20 +2,24 @@
 
 ## References
 
+<br>
+
 ### Books
 [1] Brunton, Kutz, "Data driven Science and Engineering, 2nd Edition, 2021.
 
+<br>
 
 ### GitHub Packages
 [1] Steven Brunton, [Dynamics Lab](https://github.com/dynamicslab), University of Washington.
 
 [2] [Pysensors](https://github.com/dynamicslab/pysensors) python package for sparse sensor placement.
 
+<br>
 
 ### Data Sources
 [1] [Kaggle](https://www.kaggle.com/organizations/uciml/datasets) UCI Machine Learning 
 
-
+<br>
 
 ### Libraries
 Open-source libraries developed for data-driven dynamical systems:
@@ -35,5 +39,6 @@ Open-source libraries developed for data-driven dynamical systems:
 [7] [PINN ODE Tutorial](https://github.com/PML-UCF/pinn_ode_tutorial), Python implementation of ODE Solvers using Hybrid PINNs.
 
 [8] [SR3](https://github.com/UW-AMO/sr3-matlab): Sparse Relaxed Regularized Regression in MATLAB
+
 
 --------
