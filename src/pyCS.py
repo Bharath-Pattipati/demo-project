@@ -1,6 +1,7 @@
 """
 CS50p Course: Introduction to Programming with Python
 """
+
 # %% Import libraries
 # from random import choice, randint, shuffle
 # import statistics as stats
@@ -9,6 +10,10 @@ CS50p Course: Introduction to Programming with Python
 
 # import cowsay
 # import requests
+
+# import csv
+import sys
+from PIL import Image
 
 # %% Functions and Variables Examples
 """# combined functions (readability, length of line, simplify, etc.)
@@ -257,7 +262,7 @@ for i in o["results"]:
 
 
 # %% Unit Testing for Calculator written in testCalculator.py
-def main():
+""" def main():
     x = int(input("What's x? "))
     print("x squared is", square(x))
 
@@ -267,4 +272,67 @@ def square(n):
 
 
 if __name__ == "__main__":
-    main()  # call the main function
+    main()  # call the main function """
+
+# %% File IO
+# names = []
+""" for _ in range(3):
+    names.append(input("What's your Name?"))
+
+with open("names.txt", "a") as file:
+    for name in names:
+        file.write(name + "\n") """
+
+""" with open("names.txt", "r") as file:
+    for line in file:
+        names.append(line.strip())
+
+for name in sorted(names, reverse=True):
+    print(name)  # print the sorted names """
+
+""" with open("src/students.csv") as file:
+    for line in file:
+        name, house = line.strip().split(",")
+        print(f"{name} is in {house}") """
+
+# students = []
+
+""" with open("src/students.csv") as file:
+    for line in file:
+        name, house = line.strip().split(",")
+        students.append({"name": name, "house": house}) """
+
+
+""" def get_name(student):
+    return student["name"] """
+
+""" for student in sorted(students, key=get_name, reverse=True):
+    print(f"{student['name']} is in {student['house']}")  # print the sorted names """
+
+""" for student in sorted(
+    students, key=lambda student: student["name"]
+):  # lambda anonymous function
+    print(f"{student['name']} is in {student['home']}")  # print the sorted names
+ """
+
+""" # Writing to file
+name = input("What's your name? ")
+home = input("What's your home? ")
+
+with open("src/students.csv", "a") as file:
+    writer = csv.DictWriter(file, fieldnames=["name", "home"])
+    writer.writerow(
+        {"name": name, "home": home}
+    )  # write the name and house to the file """
+
+# %% Images
+""" images = []
+
+for arg in sys.argv[1:]:  # slice the list to exclude the script name
+    image = Image.open(arg)
+    images.append(image)
+
+# images[0].show()
+images[0].save(
+    "output.gif", save_all=True, append_images=images[1:], duration=200, loop=0
+) """
