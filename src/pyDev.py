@@ -246,3 +246,33 @@ ax.set_ylabel("y")
 ax.set_zlabel("z")
 plt.title("Lorenz Attractor")
 plt.show()
+
+# %% HAVOK Code for Lorenz System
+
+## Eigen-time delay coordinates
+stackmax = 10  # Number of shift-stacked rows, q from equation (7.107)
+r = 10  # rank of HAVOK model
+H = np.zeros((stackmax, x_t.shape[0] - stackmax))  # Time-shifted matrix initialization
+
+for k in range(stackmax):
+    H[k, :] = x_t[
+        k : -(stackmax - k), 0
+    ]  # Hankel matrix from a single measurement x(t)
+U, S, VT = np.linalg.svd(H, full_matrices=0)
+V = VT.T
+
+## Compute Derivatives (4th Order Central Difference)
+dV = (1 / (12 * dt)) * (-V[4:, :] + 8 * V[3:-1, :] - 8 * V[1:-3, :] + V[:-4, :])
+
+# trim first and last two that are lost in derivative
+V = V[2:-2]
+
+## Build HAVOK Regression Model on Time Delay Coordinates
+Xi = np.linalg.lstsq(V, dV, rcond=None)[0]
+
+# Refer to equation (7.109)
+# Linear model on first (r-1) variables and recast last variable as a forcing term
+A = Xi[: (r - 1), : (r - 1)].T
+B = Xi[-1, : (r - 1)].T
+
+# %%
