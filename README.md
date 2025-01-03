@@ -38,7 +38,11 @@ Open-source libraries developed for data-driven dynamical systems:
 
 [7] [PINN ODE Tutorial](https://github.com/PML-UCF/pinn_ode_tutorial), Python implementation of ODE Solvers using Hybrid PINNs.
 
-[8] [SR3](https://github.com/UW-AMO/sr3-matlab): Sparse Relaxed Regularized Regression in MATLAB
+[8] [SR3](https://github.com/UW-AMO/sr3-matlab): Sparse Relaxed Regularized Regression in MATLAB.
+
+[9] Python Control Systems Library, [python-control](https://python-control.readthedocs.io/).
+
+[10] SLICOT Optimization libraries. P. Benner, V. Mehrmann, V. Sima, S. Van Huffel, and A. Varga. Slicot - a subroutine library in systems and control theory. Applied Computational Control, Signals, and Circuits, Springer, 1999.
 
 
 --------
