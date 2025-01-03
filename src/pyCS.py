@@ -12,8 +12,10 @@ CS50p Course: Introduction to Programming with Python
 # import requests
 
 # import csv
-import sys
-from PIL import Image
+# import sys
+# from PIL import Image
+
+import re
 
 # %% Functions and Variables Examples
 """# combined functions (readability, length of line, simplify, etc.)
@@ -336,3 +338,53 @@ for arg in sys.argv[1:]:  # slice the list to exclude the script name
 images[0].save(
     "output.gif", save_all=True, append_images=images[1:], duration=200, loop=0
 ) """
+# %% Regular Expressions: EMAIL
+# email = input("What's your email? ").strip()
+""" if "@" in email and "." in email:
+    print("Valid email")
+else:
+    print("Invalid email") """
+
+""" username, domain = email.split("@")
+
+if username and domain.endswith(".com"):
+    print("Valid email")
+else:
+    print("Invalid email")
+ """
+
+
+# if re.search(r"^\w+@(\w+\.)?\w+\.(com|edu|gov|net|org)$", email, re.IGNORECASE):
+#    print("Valid email")
+# else:
+#    print("Invalid email")
+
+
+# %% Regular Expressions: FORMAT
+""" if "," in name:
+    last, first = name.split(",")
+    print(f"Hello, {first.strip()} {last.strip()}!") """
+
+
+# name = input("What's your name? ").strip()
+# re.search(r"^\w+$", name)
+""" if matches := re.search(r"^(.+), *(.+)$", name):
+    name = matches.group(2) + " " + matches.group(1)  # location 0
+print(f"Hello, {name}!") """
+
+
+# Twitter: https://x.com/davidjmalan?mx=2
+url = input("URL: ").strip()
+
+# username = re.sub(r"^(https?://)?(www\.)?x.com/", "", url)
+# print(f"Username: {username}")
+
+""" if matches:
+    print(f"Username: {matches.group('username')}")
+else:
+    print("Invalid URL") """
+
+if matches := re.search(r"^(https?://)?(www\.)?x.com/(?P<username>\w+)", url, re.I):
+    print(f"Username: {matches.group('username')}")
+else:
+    print("Invalid URL")
