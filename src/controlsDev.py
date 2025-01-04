@@ -1,7 +1,7 @@
 # %% Importing libraries
-import os
-import control as ct
-from control.matlab import step, bode, nyquist, rlocus, logspace
+# import os
+# import control as ct
+# from control.matlab import step, bode, nyquist, rlocus, logspace
 # from control.matlab import *
 # import slycot
 

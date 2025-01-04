@@ -15,7 +15,7 @@ CS50p Course: Introduction to Programming with Python
 # import sys
 # from PIL import Image
 
-import re
+# import re
 
 # %% Functions and Variables Examples
 """# combined functions (readability, length of line, simplify, etc.)
@@ -374,7 +374,7 @@ print(f"Hello, {name}!") """
 
 
 # Twitter: https://x.com/davidjmalan?mx=2
-url = input("URL: ").strip()
+# url = input("URL: ").strip()
 
 # username = re.sub(r"^(https?://)?(www\.)?x.com/", "", url)
 # print(f"Username: {username}")
@@ -384,7 +384,25 @@ url = input("URL: ").strip()
 else:
     print("Invalid URL") """
 
-if matches := re.search(r"^(https?://)?(www\.)?x.com/(?P<username>\w+)", url, re.I):
-    print(f"Username: {matches.group('username')}")
-else:
-    print("Invalid URL")
+# if matches := re.search(r"^(https?://)?(www\.)?x.com/(?P<username>\w+)", url, re.I):
+#   print(f"Username: {matches.group('username')}")
+# else:
+#    print("Invalid URL")
+
+
+# %% Object-Oriented Programming (OOP)
+def main():
+    student = get_student()
+    print(f"{student["name"]} from {student["house"]}")
+
+
+def get_student():
+    student = {
+        "name": input("Name ").strip().title(),
+        "house": input("House ").strip().title(),
+    }
+    return student  # can return tuple (), list [] or dictionary {}, you can also create and return at the same time
+
+
+if __name__ == "__main__":
+    main()  # call the main function
