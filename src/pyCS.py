@@ -5,6 +5,7 @@ CS50p Course: Introduction to Programming with Python
 # %% Import libraries
 # from random import choice, randint, shuffle
 # import statistics as stats
+# import random
 # import sys
 # import json
 
@@ -391,16 +392,12 @@ else:
 
 
 # %% Object-Oriented Programming (OOP)
-class Student:  # Class is mutable but can be made immutable by using dataclasses
+""" class Student:  # Class is mutable but can be made immutable by using dataclasses
     def __init__(  # default function that will always run when the class is called
         self, name, house, patronous=None
     ):  # initialize objects of the class, adding instance variables to objects.
-        if not name:
-            raise ValueError("Missing name!")
-        if house not in ["Gryffindor", "Slytherin", "Ravenclaw", "Hufflepuff"]:
-            raise ValueError("Invalid house!")
         self.name = name  # self is used to store the instance variables
-        self.house = house
+        self.house = house  # goes through getter and setter
         self.patronus = patronous
 
     def __str__(
@@ -410,6 +407,28 @@ class Student:  # Class is mutable but can be made immutable by using dataclasse
 
     def __repr__(self):  # representation of the object, more for developers, debugging
         return f"Student({self.name}, {self.house})"
+
+    # Getter
+    @property
+    def house(self):
+        return self._house
+
+    # Setter
+    @house.setter
+    def house(self, house):
+        if house not in ["Gryffindor", "Slytherin", "Ravenclaw", "Hufflepuff"]:
+            raise ValueError("Invalid house!")
+        self._house = house
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        if not name:
+            raise ValueError("Missing name!")
+        self._name = name
 
     def charm(self):
         match self.patronus:
@@ -424,18 +443,104 @@ class Student:  # Class is mutable but can be made immutable by using dataclasse
             case _:  # default case
                 return "🐱"
 
+    @classmethod
+    def get(cls):
+        name = input("Name: ")
+        house = input("House: ")
+        patronus = input("Patronus: ")
+        return cls(name, house, patronus) """
 
-def main():
-    student = get_student()
+
+""" def get_student():  # can return tuple (), list [] or dictionary {}, you can also create and return at the same time
+    return Student(
+        input("Name: "), input("House: "), input("Patronus: ")
+    )  # create object of class Student i.e. instance of the class, Constructor Call. """
+
+
+""" def main():
+    student = Student.get()
     print(student)
     print("Expecto Patronum: ", student.charm())
 
 
-def get_student():  # can return tuple (), list [] or dictionary {}, you can also create and return at the same time
-    return Student(
-        input("Name: "), input("House: "), input("Patronus: ")
-    )  # create object of class Student i.e. instance of the class, Constructor Call.
-
-
 if __name__ == "__main__":
-    main()  # call the main function
+    main()  # call the main function """
+
+# %% OOP Types
+""" print(type(50.0))
+print(type("Hello, World!"))
+print(type([]))
+print(type({}))
+print(type(())) """
+
+
+# %% OOP Sorting Hat
+""" class Hat:
+    houses = ["Gryffindor", "Slytherin", "Ravenclaw", "Hufflepuff"]
+
+    @classmethod
+    def sort(cls, name):
+        print(f"{name} belongs to {random.choice(cls.houses)}")
+
+
+hat = Hat()  # instantiating object of certain class
+hat.sort("Harry") """
+
+
+# %% OOP Inheritance
+""" class Wizard:
+    def __init__(self, name):
+        if not name:
+            raise ValueError("Missing name!")
+        self.name = name
+
+
+class Student(Wizard):
+    def __init__(self, name, house):
+        super().__init__(name)
+        self.house = house
+
+    ...
+
+
+class Professor(Wizard):
+    def __init__(self, name, subject):
+        super().__init__(name)
+        self.subject = subject
+
+    ...
+
+
+wizard = Wizard("Dumbledore")
+student = Student("Harry", "Gryffindor")
+professor = Professor("Snape", "Potions")
+print(wizard.name)
+print(student.name, student.house)
+print(professor.name, professor.subject) """
+
+
+# %% OOP: Operator Overloading
+class Vault:
+    def __init__(self, galleons=0, sickles=0, knuts=0):
+        self.galleons = galleons
+        self.sickles = sickles
+        self.knuts = knuts
+
+    def __str__(self):
+        return f"{self.galleons} galleons, {self.sickles} sickles, {self.knuts} knuts"
+
+    def __add__(self, other):  # overloading the + operator
+        galleons = self.galleons + other.galleons
+        sickles = self.sickles + other.sickles
+        knuts = self.knuts + other.knuts
+        return Vault(galleons, sickles, knuts)
+
+
+potters = Vault(7, 21, 42)
+print(potters)
+
+weasleys = Vault(3, 7, 21)
+print(weasleys)
+
+total = potters + weasleys
+print(total)
