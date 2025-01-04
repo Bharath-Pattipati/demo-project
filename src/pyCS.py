@@ -391,17 +391,50 @@ else:
 
 
 # %% Object-Oriented Programming (OOP)
+class Student:  # Class is mutable but can be made immutable by using dataclasses
+    def __init__(  # default function that will always run when the class is called
+        self, name, house, patronous=None
+    ):  # initialize objects of the class, adding instance variables to objects.
+        if not name:
+            raise ValueError("Missing name!")
+        if house not in ["Gryffindor", "Slytherin", "Ravenclaw", "Hufflepuff"]:
+            raise ValueError("Invalid house!")
+        self.name = name  # self is used to store the instance variables
+        self.house = house
+        self.patronus = patronous
+
+    def __str__(
+        self,
+    ):  # python will automatically call this function when another function calls this object as a string
+        return f"{self.name} is from {self.house}"
+
+    def __repr__(self):  # representation of the object, more for developers, debugging
+        return f"Student({self.name}, {self.house})"
+
+    def charm(self):
+        match self.patronus:
+            case "Stag":
+                return "🐴"
+            case "Otter":
+                return "🦦"
+            case "Dragon":
+                return "🐉"
+            case "Jack Russell Terrier":
+                return "🐶"
+            case _:  # default case
+                return "🐱"
+
+
 def main():
     student = get_student()
-    print(f"{student["name"]} from {student["house"]}")
+    print(student)
+    print("Expecto Patronum: ", student.charm())
 
 
-def get_student():
-    student = {
-        "name": input("Name ").strip().title(),
-        "house": input("House ").strip().title(),
-    }
-    return student  # can return tuple (), list [] or dictionary {}, you can also create and return at the same time
+def get_student():  # can return tuple (), list [] or dictionary {}, you can also create and return at the same time
+    return Student(
+        input("Name: "), input("House: "), input("Patronus: ")
+    )  # create object of class Student i.e. instance of the class, Constructor Call.
 
 
 if __name__ == "__main__":
