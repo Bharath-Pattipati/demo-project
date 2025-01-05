@@ -17,7 +17,7 @@ CS50p Course: Introduction to Programming with Python
 # from PIL import Image
 
 # import re
-import argparse
+# import argparse
 
 # %% Functions and Variables Examples
 """# combined functions (readability, length of line, simplify, etc.)
@@ -658,9 +658,109 @@ elif len(sys.argv) == 3 and sys.argv[1] == "-n":  # python src/pyCS.py -n 5
 else:
     print("usage: meows.py") """
 
-parser = argparse.ArgumentParser(description="Meow like a cat")
+""" parser = argparse.ArgumentParser(description="Meow like a cat")
 parser.add_argument("-n", default=1, help="number of times to meow", type=int)
 args = parser.parse_args()
 
 for _ in range(int(args.n)):
-    print("meow")
+    print("meow") """
+
+# %% Unpacking
+# first, last = input("What's your full name? ").split()
+# print(f"Hello, {first}")
+
+
+""" def total(galleons=0, sickles=0, knuts=0):
+    return (galleons * 17 + sickles) * 29 + knuts """
+
+
+# coins = [100, 50, 25] # List
+# print(total(*coins), "Knuts") # List unpacking
+
+""" coins = {"galleons": 100, "sickles": 50, "knuts": 25}
+print(total(**coins), "Knuts")  # unpack dictionary """
+
+
+""" def f(*args, **kwargs):
+    print(f"Positional arguments: {args} of {type(args)}")  # Tuple
+    print(f"Positional aruments: {kwargs} of {type(kwargs)}")  # Tuple
+
+
+f(100, 50, 25, 5)
+f(galleons=100, sickles=50, knuts=25) """
+
+
+# %% MAP & List Comprehenson
+""" def main():
+    yell("This", "is", "CS50!")
+
+
+def yell(*words):
+    uppercased = map(
+        str.upper, words
+    )  # map(function, iterable), iterate over each word/sequence and apply function, functional programming
+    print(*uppercased)
+    uppercase = [word.upper() for word in words]  # list comprehension
+    print(*uppercase)
+
+
+if __name__ == "__main__":
+    main() """
+
+# %% Gryffindors: List and Dict comprehension, FILTER function
+""" students = [
+    {"name": "Harry", "house": "Gryffindor"},
+    {"name": "Ron", "house": "Gryffindor"},
+    {"name": "Hermione", "house": "Gryffindor"},
+    {"name": "Draco", "house": "Slytherin"},
+    {"name": "Luna", "house": "Ravenclaw"},
+    {"name": "Cedric", "house": "Hufflepuff"},
+] """
+
+""" gryffindors = [
+    student["name"] for student in students if student["house"] == "Gryffindor"
+]
+
+for gryffindor in sorted(gryffindors):
+    print(gryffindor) """
+
+
+""" def is_gryffindor(s):
+    return s["house"] == "Gryffindor"
+
+
+gryffindors = filter(is_gryffindor, students)
+
+for gryffindor in sorted(gryffindors, key=lambda s: s["name"]):
+    print(gryffindor["name"]) """
+
+
+# students = ["Harry", "Hermoine", "Ron"]
+
+""" gryffindors = [
+    {"name": student, "house": "Gryffindor"} for student in students
+]  # Dict comprehension
+
+print(gryffindors)
+
+gryffindors = {student: "Gryffindor" for student in students}
+print(gryffindors) """
+
+""" for i, student in enumerate(students):
+    print(i + 1, student) """
+
+
+# %% SLEEP: Generators with YIELD Keyword
+def main():
+    n = int(input("What's n: "))
+    for s in sheep(n):
+        print(s)
+
+
+def sheep(n):
+    for i in range(n):
+        yield "🐱" * i
+
+
+if __name__ == "__main__":
+    main()
