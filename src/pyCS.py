@@ -17,6 +17,7 @@ CS50p Course: Introduction to Programming with Python
 # from PIL import Image
 
 # import re
+import argparse
 
 # %% Functions and Variables Examples
 """# combined functions (readability, length of line, simplify, etc.)
@@ -520,7 +521,7 @@ print(professor.name, professor.subject) """
 
 
 # %% OOP: Operator Overloading
-class Vault:
+""" class Vault:
     def __init__(self, galleons=0, sickles=0, knuts=0):
         self.galleons = galleons
         self.sickles = sickles
@@ -543,4 +544,123 @@ weasleys = Vault(3, 7, 21)
 print(weasleys)
 
 total = potters + weasleys
-print(total)
+print(total) """
+
+# %% Miscellaneous concepts
+""" students = [
+    {"name": "Harry", "house": "Gryffindor"},
+    {"name": "Ron", "house": "Gryffindor"},
+    {"name": "Hermione", "house": "Gryffindor"},
+    {"name": "Draco", "house": "Slytherin"},
+    {"name": "Luna", "house": "Ravenclaw"},
+    {"name": "Cedric", "house": "Hufflepuff"},
+]
+
+houses = (
+    set()
+)  # set is a collection of unique elements, duplicates are automatically removed
+for student in students:
+    houses.add(student["house"])
+
+for house in sorted(houses):
+    print(house) """
+
+# %% Bank
+""" balance = 0
+
+
+def main():
+    print("Balance: ", balance)
+    deposit(100)
+    withdraw(50)
+    print("Balance: ", balance)
+
+
+def deposit(amount):
+    global balance
+    balance += amount
+
+
+def withdraw(amount):
+    global balance
+    balance -= amount
+
+
+if __name__ == "__main__":
+    main()  # call the main function """
+
+
+# %% Bank Account: class instance variables and methods
+""" class Account:
+    def __init__(self):
+        self._balance = 0  # special parameter self is used to store the instance variables and make it accessible to all functions within class
+
+    @property  # getter
+    def balance(self):
+        return self._balance
+
+    def __str__(self):
+        return f"Balance: {self.balance}"
+
+    def deposit(self, n):
+        self._balance += n
+
+    def withdraw(self, n):
+        self._balance -= n
+
+
+def main():
+    account = Account()
+    print(account)
+    account.deposit(100)
+    account.withdraw(50)
+    print(account)
+
+
+if __name__ == "__main__":
+    main()  # call the main function """
+
+
+# %% Constants
+""" class Cat:
+    MEOWS = 3  # class variable, shared by all instances of the class
+
+    def meow(self):
+        print("Meow!\n" * Cat.MEOWS)
+
+
+cat = Cat()
+cat.meow() """
+
+
+# def meow(n: int) -> str:  # indicate arg type (int) and return type (str)
+#    """Meow n times.
+
+#    Args:
+#        n (int): _description_
+
+#    Returns:
+#        str: _description_
+#    """
+#    return "meow\n" * n
+
+
+# number: int = int(input("Number: "))  # run mypy src/pyCS.py to check correct types
+# meows: str = meow(number)
+# print(meows)
+
+# %% Argument Parsing
+""" if len(sys.argv) == 1:
+    print("meow")
+elif len(sys.argv) == 3 and sys.argv[1] == "-n":  # python src/pyCS.py -n 5
+    n = int(sys.argv[2])
+    print("meow\n" * n)
+else:
+    print("usage: meows.py") """
+
+parser = argparse.ArgumentParser(description="Meow like a cat")
+parser.add_argument("-n", default=1, help="number of times to meow", type=int)
+args = parser.parse_args()
+
+for _ in range(int(args.n)):
+    print("meow")
