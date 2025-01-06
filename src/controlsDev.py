@@ -101,9 +101,9 @@ def lqe(a, g, c, q, r):
     c = np.diag(c)
     r = np.squeeze(r)
     (p, e, k) = care(a.T, c.T, qg)  # ,R=r,S=ng)
-    l = k[0, :]
+    l_gain = k[0, :]
 
-    return (l, p, e)
+    return (l_gain, p, e)
 
 
 # %% Case Study: Inverted Pendulum on a Cart
