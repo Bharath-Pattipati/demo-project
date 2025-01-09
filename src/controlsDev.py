@@ -5,11 +5,18 @@
 # from control.matlab import *
 # import slycot
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
-from control.matlab import lqr, ctrb, obsv, ss, lsim, care
-from scipy.integrate import odeint
-from scipy.linalg import schur
+
+# from control.matlab import lqr, ctrb, obsv, ss, lsim, care
+# from scipy.integrate import odeint
+# from scipy.linalg import schur
+
+from control.matlab import tf, series, feedback, step, lsim
+from deap import base
+from deap import creator
+from deap import tools
+import random
 
 # %% Second-order system example
 """ # Parameters defining the system
@@ -74,7 +81,7 @@ plt.show() """
 
 # %% Kalman Estimator Design
 # Kalman estimator design
-def lqe(a, g, c, q, r):
+""" def lqe(a, g, c, q, r):
     r = np.atleast_2d(r)
     nn = np.zeros((q.shape[0], len(r)))
     qg = g @ q @ g.T
@@ -103,7 +110,7 @@ def lqe(a, g, c, q, r):
     (p, e, k) = care(a.T, c.T, qg)  # ,R=r,S=ng)
     l_gain = k[0, :]
 
-    return (l_gain, p, e)
+    return (l_gain, p, e) """
 
 
 # %% Case Study: Inverted Pendulum on a Cart
@@ -147,7 +154,7 @@ def pendcart(x, t, m, M, L, g, d, uf):
     return dx
 
 
-# Construct linearized system matrices
+""" # Construct linearized system matrices
 m = 1
 M = 5
 L = 2
@@ -259,4 +266,168 @@ plt.gca().set_prop_cycle(None)  # reset color cycle
     for k in range(4)
 ]
 plt.legend()
-plt.show()
+plt.show() """
+
+
+# %% PID controller tuning
+dt = 0.001
+PopSize = 25
+MaxGenerations = 10
+s = tf(1, 1)
+G = 1 / (s * (s * s + s + 1))
+
+
+def pidtest(G, dt, parms):
+    s = tf(1, 1)
+    K = parms[0] + parms[1] / s + parms[2] * s / (1 + 0.001 * s)
+    Loop = series(K, G)
+    ClosedLoop = feedback(Loop, 1)
+    t = np.arange(0, 20, dt)
+    y, t = step(ClosedLoop, 1)
+
+    # CTRLtf = K / (1 + K * G)
+    u = lsim(K, 1 - y, t)[0]
+
+    Q = 1
+    R = 0.001
+    J = dt * np.sum(
+        np.power(Q @ (1 - y.reshape(-1)), 2) + R @ np.power(u.reshape(-1), 2)
+    )
+    return J
+
+
+# %% DEAP Package: Genetic Algorithm
+creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+creator.create("Individual", list, fitness=creator.FitnessMax)
+
+toolbox = base.Toolbox()
+
+# Attribute generator
+#                      define 'attr_bool' to be an attribute ('gene')
+#                      which corresponds to integers sampled uniformly
+#                      from the range [0,1] (i.e. 0 or 1 with equal
+#                      probability)
+toolbox.register("attr_bool", random.randint, 0, 1)
+
+# Structure initializers
+#                         define 'individual' to be an individual
+#                         consisting of 100 'attr_bool' elements ('genes')
+toolbox.register(
+    "individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, 100
+)
+
+# define the population to be a list of individuals
+toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+
+# the goal ('fitness') function to be maximized
+def evalOneMax(individual):
+    return (sum(individual),)
+
+
+# ----------
+# Operator registration
+# ----------
+# register the goal / fitness function
+toolbox.register("evaluate", evalOneMax)
+
+# register the crossover operator
+toolbox.register("mate", tools.cxTwoPoint)
+
+# register a mutation operator with a probability to
+# flip each attribute/gene of 0.05
+toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
+
+# operator for selecting individuals for breeding the next
+# generation: each individual of the current generation
+# is replaced by the 'fittest' (best) of three individuals
+# drawn randomly from the current generation.
+toolbox.register("select", tools.selTournament, tournsize=3)
+
+# ----------
+
+random.seed(64)
+
+# create an initial population of 300 individuals (where
+# each individual is a list of integers)
+pop = toolbox.population(n=300)
+
+# CXPB  is the probability with which two individuals
+#       are crossed
+#
+# MUTPB is the probability for mutating an individual
+CXPB, MUTPB = 0.5, 0.2
+
+print("Start of evolution")
+
+# Evaluate the entire population
+fitnesses = list(map(toolbox.evaluate, pop))
+for ind, fit in zip(pop, fitnesses):
+    ind.fitness.values = fit
+
+print("  Evaluated %i individuals" % len(pop))
+
+# Extracting all the fitnesses of
+fits = [ind.fitness.values[0] for ind in pop]
+
+# Variable keeping track of the number of generations
+g = 0
+
+# Begin the evolution
+while max(fits) < 100 and g < 1000:
+    # A new generation
+    g = g + 1
+    print("-- Generation %i --" % g)
+
+    # Select the next generation individuals
+    offspring = toolbox.select(pop, len(pop))
+    # Clone the selected individuals
+    offspring = list(map(toolbox.clone, offspring))
+
+    # Apply crossover and mutation on the offspring
+    for child1, child2 in zip(offspring[::2], offspring[1::2]):
+        # cross two individuals with probability CXPB
+        if random.random() < CXPB:
+            toolbox.mate(child1, child2)
+
+            # fitness values of the children
+            # must be recalculated later
+            del child1.fitness.values
+            del child2.fitness.values
+
+    for mutant in offspring:
+        # mutate an individual with probability MUTPB
+        if random.random() < MUTPB:
+            toolbox.mutate(mutant)
+            del mutant.fitness.values
+
+    # Evaluate the individuals with an invalid fitness
+    invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+    fitnesses = map(toolbox.evaluate, invalid_ind)
+    for ind, fit in zip(invalid_ind, fitnesses):
+        ind.fitness.values = fit
+
+    print("  Evaluated %i individuals" % len(invalid_ind))
+
+    # The population is entirely replaced by the offspring
+    pop[:] = offspring
+
+    # Gather all the fitnesses in one list and print the stats
+    fits = [ind.fitness.values[0] for ind in pop]
+
+    length = len(pop)
+    mean = sum(fits) / length
+    sum2 = sum(x * x for x in fits)
+    std = abs(sum2 / length - mean**2) ** 0.5
+
+    print("  Min %s" % min(fits))
+    print("  Max %s" % max(fits))
+    print("  Avg %s" % mean)
+    print("  Std %s" % std)
+
+print("-- End of (successful) evolution --")
+
+best_ind = tools.selBest(pop, 1)[0]
+print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
+
+# %%

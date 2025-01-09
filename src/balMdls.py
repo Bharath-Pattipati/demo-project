@@ -187,7 +187,7 @@ Ar, Br, Cr, Dr, HSVs = ERA(H, mco, mco, q, p, r)
 sysERAOKID = ss(Ar, Br, Cr, Dr, 1)
 
 # %% Impulse Response of various models
-for qi in range(q):
+""" for qi in range(q):
     y1[:, :, qi], t1 = impulse(sysFull, np.arange(200), input=qi)
     y2[:, :, qi], t2 = impulse(sysERA, np.arange(100), input=qi)
-    y3[:, :, qi], t3 = impulse(sysERAOKID, np.arange(100), input=qi)
+    y3[:, :, qi], t3 = impulse(sysERAOKID, np.arange(100), input=qi) """
