@@ -44,5 +44,7 @@ Open-source libraries developed for data-driven dynamical systems:
 
 [10] SLICOT Optimization libraries. P. Benner, V. Mehrmann, V. Sima, S. Van Huffel, and A. Varga. Slicot - a subroutine library in systems and control theory. Applied Computational Control, Signals, and Circuits, Springer, 1999.
 
+[11] [Gymnasium](https://github.com/Farama-Foundation/Gymnasium): A Standard Interface for Reinforcement Learning Environments. [Documentation](https://gymnasium.farama.org/)
+
 
 --------
