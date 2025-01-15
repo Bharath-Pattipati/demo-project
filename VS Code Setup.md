@@ -13,16 +13,11 @@
 
 ### Download VS Code
 
-[
-
 Visual Studio Code - Code Editing. Redefined
 
 Visual Studio Code is a code editor redefined and optimized for building and debugging modern web and cloud applications.  Visual Studio Code is free and available on your favorite platform - Linux, macOS, and Windows.
 
-![](https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fcode.visualstudio.com)https://code.visualstudio.com
-
-](https://code.visualstudio.com)
-
+![](https://www.google.com/s2/favicons?sz=64&domain_url=https%3A%2F%2Fcode.visualstudio.com)[https://code.visualstudio.com](https://code.visualstudio.com)
   
 
 ### Introduction
@@ -162,3 +157,6 @@ After installation, some extensions may require additional setup or a restart of
 *   **Access Git Commands:** Use the Source Control menu in VS Code to run common Git commands like commit, push, pull, and merge without leaving the editor. This streamlines your workflow by integrating version control into your development environment.
 *   **Branch Awareness:** Easily check which branch you're working on directly from the Source Control menu. It provides a clear display of your current branch, making it simple to switch branches or create new ones as needed.
 *   **Open Repo in Browser:** With a quick action from the Source Control menu, you can open your repository in a web browser. This is handy for reviewing pull requests, managing repo settings, or browsing the code on GitHub.
+
+### VS Code Productivity Tips
+* [Fireship tutorial](https://www.youtube.com/watch?v=ifTF3ags0XI&ab_channel=Fireship): 25 VS Code Productivity Tips and Speed Hacks
