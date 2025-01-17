@@ -6,20 +6,20 @@
 # import slycot
 
 # import matplotlib.pyplot as plt
-import numpy as np
+# import numpy as np
 
 # from control.matlab import lqr, ctrb, obsv, ss, lsim, care
 # from scipy.integrate import odeint
 # from scipy.linalg import schur
 
-from control.matlab import tf, series, feedback, step, lsim
-from deap import base
-from deap import creator
-from deap import tools
-import random
+# from control.matlab import tf, series, feedback, step, lsim
+# from deap import base
+# from deap import creator
+# from deap import tools
+# import random
 
 # %% Second-order system example
-""" # Parameters defining the system
+"""# Parameters defining the system
 m = 250.0  # system mass
 k = 40.0  # spring constant
 b = 60.0  # damping constant
@@ -52,7 +52,7 @@ rlocus(sys)
 plt.show(block=False)
 
 if "PYCONTROL_TEST_EXAMPLES" not in os.environ:
-    plt.show() """
+    plt.show()"""
 
 # %% Cruise Control System Example
 """ t = np.arange(0, 10, 0.01)  # time
@@ -114,8 +114,8 @@ plt.show() """
 
 
 # %% Case Study: Inverted Pendulum on a Cart
-def pendcart(x, t, m, M, L, g, d, uf):
-    """RHS function for inverted pendulum on cart
+# def pendcart(x, t, m, M, L, g, d, uf):
+"""RHS function for inverted pendulum on cart
 
     Args:
         x (_type_): Cart Position
@@ -137,7 +137,7 @@ def pendcart(x, t, m, M, L, g, d, uf):
         omega: angular velocity, x[3]
 
     """
-    u = uf(x)  # evaluate anonymous function at x
+"""     u = uf(x)  # evaluate anonymous function at x
     Sx = np.sin(x[2])
     Cx = np.cos(x[2])
     D = m * L * L * (M + m * (1 - Cx**2))
@@ -151,10 +151,10 @@ def pendcart(x, t, m, M, L, g, d, uf):
     dx[3] = (1.0 / D) * (
         (m + M) * m * g * L * Sx - m * L * Cx * (m * L * (x[3] ** 2) * Sx - d * x[1])
     ) - m * L * Cx * (1.0 / D) * u
-    return dx
+    return dx """
 
-
-""" # Construct linearized system matrices
+""" 
+# Construct linearized system matrices
 m = 1
 M = 5
 L = 2
@@ -196,7 +196,7 @@ def u(x):
 
 
 x = odeint(pendcart, x0, tspan, args=(m, M, L, g, d, u))
-labels = ["x", "v", r"$\theta$", r"$\omega$"]
+labels = ["x", "v", "\theta", "\omega"]
 
 # plot nonlinear states
 plt.figure(1)
@@ -266,11 +266,12 @@ plt.gca().set_prop_cycle(None)  # reset color cycle
     for k in range(4)
 ]
 plt.legend()
-plt.show() """
+plt.show() 
+"""
 
 
 # %% PID controller tuning
-dt = 0.001
+""" dt = 0.001
 PopSize = 25
 MaxGenerations = 10
 s = tf(1, 1)
@@ -293,11 +294,11 @@ def pidtest(G, dt, parms):
     J = dt * np.sum(
         np.power(Q @ (1 - y.reshape(-1)), 2) + R @ np.power(u.reshape(-1), 2)
     )
-    return J
+    return J """
 
 
 # %% DEAP Package: Genetic Algorithm
-creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+""" creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
 
 toolbox = base.Toolbox()
@@ -428,6 +429,6 @@ while max(fits) < 100 and g < 1000:
 print("-- End of (successful) evolution --")
 
 best_ind = tools.selBest(pop, 1)[0]
-print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
+print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values)) """
 
 # %%
