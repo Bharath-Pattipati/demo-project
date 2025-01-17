@@ -5,11 +5,11 @@
 # from control.matlab import *
 # import slycot
 
-# import matplotlib.pyplot as plt
-# import numpy as np
+import matplotlib.pyplot as plt
+import numpy as np
 
 # from control.matlab import lqr, ctrb, obsv, ss, lsim, care
-# from scipy.integrate import odeint
+from scipy.integrate import odeint
 # from scipy.linalg import schur
 
 # from control.matlab import tf, series, feedback, step, lsim
@@ -431,4 +431,60 @@ print("-- End of (successful) evolution --")
 best_ind = tools.selBest(pop, 1)[0]
 print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values)) """
 
-# %%
+
+# %% Quantum Harmonic Oscillator PDE Solution
+"""
+Numerical solution to governing PDE (12.23 in Brunton et al. 2021) based on FFT.
+Following code executes a full numerical solution with initial conditions 
+u(x,0) = exp(-0.2(x-x0)^2 => Gaussian pulse centered at x = x0.
+"""
+
+
+def harm_rhs(ut_split, t, k, V, n):
+    # Schrodinger equation with a parabolic potential
+    ut = ut_split[:n] + (1j) * ut_split[n:]
+    u = np.fft.ifft(ut)
+    rhs = -0.5 * (1j) * np.power(k, 2) * ut - 0.5 * (1j) * np.fft.fft(V * u)
+    rhs_split = np.concatenate((np.real(rhs), np.imag(rhs)))
+    return rhs_split
+
+
+def main():
+    L = 30
+    n = 512
+    x2 = np.linspace(-L / 2, L / 2, n + 1)
+    x = x2[:-1]  # spatial discretization
+    k = (2 * np.pi / L) * np.concatenate((np.arange(0, n / 2), np.arange(-n / 2, 0)))
+    V = np.power(x, 2)  # potential
+    t = np.arange(0, 20, 0.2)  # time domain collection points
+
+    u = np.exp(-0.2 * np.power(x - 1, 2))  # initial conditions
+    ut = np.fft.fft(u)  # FFT initial data
+    ut_split = np.concatenate((np.real(ut), np.imag(ut)))
+    utsol_split = odeint(
+        harm_rhs, ut_split, t, args=(k, V, n), mxstep=10**6
+    )  # integrate PDE
+
+    utsol = utsol_split[:, :n] + (1j) * utsol_split[:, n:]
+    usol = np.zeros_like(utsol)
+    for jj in range(len(t)):
+        usol[jj, :] = np.fft.ifft(utsol[jj, :])
+
+    fig, (ax1, ax2) = plt.subplots(
+        2, 1, figsize=(8, 6), subplot_kw={"projection": "3d"}
+    )
+    X, T = np.meshgrid(x, t)
+    cont = ax1.contourf(X, T, np.abs(usol) ** 2, cmap="viridis")
+    fig.colorbar(cont, ax=ax1)
+    ax1.set_xlabel("x")
+    ax1.set_ylabel("t")
+    ax1.set_title("Wave Amplitude vs Time")
+
+    ax2.plot_surface(X, T, np.abs(usol) ** 2, cmap="viridis")
+    ax2.set_xlabel("x")
+    ax2.set_ylabel("t")
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
