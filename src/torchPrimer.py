@@ -1,7 +1,13 @@
 # %% Import Libraries
 import torch
+from torch import nn, optim
+
 # import random
+# import matplotlib.pyplot as plt
 # import numpy as np
+
+from torchvision.models import resnet18, ResNet18_Weights
+
 
 # %% Basic
 """ x = torch.rand(5, 3)
@@ -115,9 +121,9 @@ if __name__ == "__main__":
     testClasses() 
 """
 
-
 # %% Torch Implementation
-class Module:
+
+""" class Module:
     def zero_grad(self):
         for p in self.parameters():
             if p.grad is not None:
@@ -141,10 +147,10 @@ class Neuron(Module):
         return out
 
     def parameters(self):
-        return torch.cat([self.w, self.b])
+        return torch.cat([self.w, self.b]) """
 
 
-class Layer(Module):
+""" class Layer(Module):
     # nin: Number of inputs
     # nout: Number of neurons in a single layer
     def __init__(self, nin, nout):
@@ -155,27 +161,13 @@ class Layer(Module):
         return outs[0] if len(outs) == 1 else outs
 
     def parameters(self):
-        return [p for n in self.neurons for p in n.parameters()]
+        return [p for n in self.neurons for p in n.parameters()] """
 
 
-class MLP(Module):
-    """
-    Constructor for MLP class.
-
-    Parameters
-    ----------
-    nin : int
-        Number of input neurons.
-    nouts : list of int
-        A list of the number of neurons in each layer of the MLP.
-
-    Returns
-    -------
-    self : MLP object
-        An instance of the MLP class.
+""" class MLP(Module):
     """
 
-    def __init__(self, nin, nouts):
+"""     def __init__(self, nin, nouts):
         sz = [nin] + nouts
         self.layers = [Layer(sz[i], sz[i + 1]) for i in range(len(nouts))]
 
@@ -185,10 +177,10 @@ class MLP(Module):
         return x
 
     def parameters(self):
-        return [p for layer in self.layers for p in layer.parameters()]
+        return [p for layer in self.layers for p in layer.parameters()]  """
 
 
-def testClasses():
+""" def testClasses():
     x = [2.0, 3.0]
     n = Neuron(2)
     print(f"Neuron: {n(x)}")
@@ -230,15 +222,82 @@ def testClasses():
             else:
                 print(f"Gradient is None for parameter {p}")
 
-        print(f"Epoch: {k}, Loss: {loss.data.item()}")
+        print(f"Epoch: {k}, Loss: {loss.data.item()}") """
 
-    # print(f"ypred: {ypred}")
-    # print(f"Loss: {loss}")
-    # print(f"Gradient: {n.layers[0].neurons[0].w.grad[0]}")
-    # print(f"Data: {n.layers[0].neurons[0].w.data[0]}")
+# print(f"ypred: {ypred}")
+# print(f"Loss: {loss}")
+# print(f"Gradient: {n.layers[0].neurons[0].w.grad[0]}")
+# print(f"Data: {n.layers[0].neurons[0].w.data[0]}")
 
 
-if __name__ == "__main__":
-    testClasses()
+""" if __name__ == "__main__":
+    testClasses() """
+
+# %% Tensors
+""" data = [[1, 2], [3, 4]]
+x_data = torch.tensor(data)
+
+x_ones = torch.ones_like(x_data)  # retains the properties of x_data
+print(f"Ones Tensor: \n {x_ones} \n")
+
+x_rand = torch.rand_like(x_data, dtype=torch.float)  # overrides the datatype of x_data
+print(f"Random Tensor: \n {x_rand} \n")
+
+# Shape is a tuple of tensor dimensions
+shape = (2, 3)
+rand_tensor = torch.rand(shape)
+print(f"Random Tensor: \n {rand_tensor} \n")
+
+tensor = torch.ones(4, 4)
+tensor[:, 1] = 0
+print(f"Shape of tensor: {tensor.shape}")
+print(f"Datatype of tensor: {tensor.dtype}")
+print(f"Device tensor is stored on: {tensor.device}")
+
+# We move our tensor to the GPU if available
+if torch.cuda.is_available():
+    tensor = tensor.to("cuda")
+    print(f"Device tensor is stored on: {tensor.device}")
+
+# joining tensors
+t1 = torch.cat([tensor, tensor, tensor], dim=1)
+print(t1)
+
+# matrix multiplication between 2 tensors
+print(f"tensor.matmul(tensor.T) \n {tensor.matmul(tensor.T)} \n")
+# Alternative syntax:
+print(f"tensor @ tensor.T \n {tensor @ tensor.T}")
+
+# numpy to tensor
+n = np.ones(5)
+t = torch.from_numpy(n)
+
+# change in numpy array reflects in tensor
+np.add(n, 1, out=n)
+print(f"t: {t}")
+print(f"n: {n}") """
+
+# %% AUTOGRAD
+model = resnet18(weights=ResNet18_Weights.DEFAULT)
+
+# Freeze all the parameters in the network
+for param in model.parameters():
+    param.requires_grad = False
+
+model.fc = nn.Linear(512, 1000)
+
+data = torch.rand(1, 3, 64, 64)
+labels = torch.rand(1, 1000)
+
+# forward pass
+predictions = model(data)
+loss = (predictions - labels).sum()
+
+# backward pass: computes gradient of the loss with respect to model parameters
+loss.backward()
+
+# update weights
+optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer.step()
 
 # %%
