@@ -1,17 +1,19 @@
 # %% Import Libraries
 import torch
-from torch import nn, optim
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
 
 # import random
 # import matplotlib.pyplot as plt
 # import numpy as np
 
-from torchvision.models import resnet18, ResNet18_Weights
+# from torchvision.models import resnet18, ResNet18_Weights
 
 
 # %% Basic
-""" x = torch.rand(5, 3)
-print(x) """
+"""x = torch.rand(5, 3)
+print(x)"""
 
 # %% Andrej Karpathy Tutorial
 # The spelled-out intro to neural networks and backpropagation: building micrograds
@@ -278,7 +280,7 @@ print(f"t: {t}")
 print(f"n: {n}") """
 
 # %% AUTOGRAD
-model = resnet18(weights=ResNet18_Weights.DEFAULT)
+""" model = resnet18(weights=ResNet18_Weights.DEFAULT)
 
 # Freeze all the parameters in the network
 for param in model.parameters():
@@ -298,6 +300,103 @@ loss.backward()
 
 # update weights
 optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-optimizer.step()
+optimizer.step() """
+
+
+# %% Neural Networks
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()  # call the parent class constructor
+        # 1 input image channel, 6 output channels, 5x5 square convolution
+        # kernel
+        self.conv1 = nn.Conv2d(
+            1, 6, 5
+        )  # nn.Conv2d will take in a 4D Tensor of nSamples x nChannels x Height x Width.
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        # an affine operation: y = Wx + b
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)  # 5x5 from image dimension
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+    # define the forward function, and the backward function (where gradients are computed) is automatically defined for you using autograd
+    def forward(self, input):
+        # Convolution layer C1: 1 input channel, 6 output channels, 5x5 square convolution kernel with RELU activation and outputs a tensor of size (N, 6, 28, 28), where N is size of the batch
+        c1 = F.relu(self.conv1(input))
+        # Subsampling layer S2: 2x2 max pooling layer with stride 2, purely functional, and outputs a tensor of size (N, 6, 14, 14)
+        s2 = F.max_pool2d(c1, (2, 2))
+        # Convolution layer C3: 6 input channels, 16 output channels, 5x5 square convolution kernel with RELU activation and outputs a tensor of size (N, 16, 10, 10)
+        c3 = F.relu(self.conv2(s2))
+        # Subsampling layer S4: 2x2 max pooling layer with stride 2, purely functional, and outputs a tensor of size (N, 16, 5, 5)
+        s4 = F.max_pool2d(c3, 2)
+        # Flattern operation: purefly functional, outputs a (N, 400) Tensor
+        s4 = torch.flatten(s4, 1)
+        # Fully connected layer F5: (N, 400) Tensor input, and outputs a (N, 120) Tensor
+        f5 = F.relu(self.fc1(s4))
+        # Fully connected layer F6: (N, 120) Tensor input, and outputs a (N, 84) Tensor
+        f6 = F.relu(self.fc2(f5))
+        # Gaussian layer output: (N, 84) Tensor input, and outputs a (N, 10) Tensor
+        output = self.fc3(f6)
+        return output
+
+
+net = Net()
+print(net)
+
+# params = list(net.parameters())
+# print(f"Number of parameters: {len(params)}")
+# print(params[0].size())  # conv1's .weight
+
+# Expected input size of LeNet is 32x32
+input = torch.randn(1, 1, 32, 32)
+out = net(input)
+print(out)
+
+# zero the gradient buffers of all parameters and backprops with random gradients
+net.zero_grad()
+out.backward(
+    torch.randn(1, 10)
+)  # whole graph is differentiated w.r.t. the neural net parameters
+
+# Loss Function
+output = net(input)
+target = torch.randn(10)  # a dummy target, for example
+target = target.view(1, -1)  # make it the same shape as output
+criterion = nn.MSELoss()
+
+loss = criterion(output, target)
+print(loss)
+
+# few steps backward
+print(loss.grad_fn)  # MSELoss
+print(loss.grad_fn.next_functions[0][0])  # Linear
+print(loss.grad_fn.next_functions[0][0].next_functions[0][0])  # ReLU
+
+# Backpropagation: clear existing gradients, else gradients will be accumulated to existing gradients
+net.zero_grad()  # zeroes the gradient buffers of all parameters
+
+print("conv1.bias.grad before backward")
+print(net.conv1.bias.grad)
+
+loss.backward()
+
+print("conv1.bias.grad after backward")
+print(net.conv1.bias.grad)
+
+# Update weights using Stochastic Gradient Descent (SGD)
+learning_rate = 0.01
+for f in net.parameters():
+    f.data.sub_(f.grad.data * learning_rate)
+
+# params before optimization
+params = list(net.parameters())
+print(f"parameters: \n{params}")
+
+# Different update rules from torch.optim (SGD, Nesterov-SGD, Adam, RMSProp, etc.)
+optimizer = optim.SGD(net.parameters(), lr=0.01)
+optimizer.zero_grad()  # zero the gradient buffers
+output = net(input)  # forward pass
+loss = criterion(output, target)  # compute loss
+loss.backward()  # backward pass
+optimizer.step()  # Update weights
 
 # %%
