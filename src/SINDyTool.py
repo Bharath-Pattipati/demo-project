@@ -31,6 +31,12 @@ else:
 # Seed the random number generators for reproducibility
 np.random.seed(100)
 
+# Initialize integrator keywords for solve_ivp to replicate the odeint defaults
+integrator_keywords = {}
+integrator_keywords["rtol"] = 1e-12
+integrator_keywords["method"] = "LSODA"
+integrator_keywords["atol"] = 1e-12
+
 # %% Basic Example
 """
 Dynamical system:
@@ -56,11 +62,7 @@ model.fit(X, t=t)
 model.print() """
 
 # %% Lorenz System
-# Initialize integrator keywords for solve_ivp to replicate the odeint defaults
-integrator_keywords = {}
-integrator_keywords["rtol"] = 1e-12
-integrator_keywords["method"] = "LSODA"
-integrator_keywords["atol"] = 1e-12
+""" 
 
 # Generate measurement data
 dt = 0.002
@@ -98,6 +100,43 @@ x_test = solve_ivp(
 ).y.T
 
 # Compare SINDy-predicted derivatives with finite difference derivatives
-print("Model score: %f" % model.score(x_test, t=dt))
+print("Model score: %f" % model.score(x_test, t=dt)) """
 
-# %%
+# %% Test weak form ODE functionality on Lorenz equation
+# Generate measurement data
+dt = 0.002
+t_train = np.arange(0, 10, dt)
+t_train_span = (t_train[0], t_train[-1])
+u0_train = [-8, 8, 27]
+u_train = solve_ivp(
+    lorenz, t_train_span, u0_train, t_eval=t_train, **integrator_keywords
+).y.T
+
+# Instantiate and fit the SINDy model with u_dot
+u_dot = ps.FiniteDifference()._differentiate(u_train, t=dt)
+model = ps.SINDy()
+model.fit(u_train, x_dot=u_dot, t=dt)
+model.print()
+
+# Define weak form ODE library
+# defaults to derivative_order = 0 if not specified,
+# and if spatial_grid is not specified, defaults to None,
+# which allows weak form ODEs.
+# library_functions = [lambda x: x, lambda x: x * x, lambda x, y: x * y]
+# library_function_names = [lambda x: x, lambda x: x + x, lambda x, y: x + y]
+
+ode_lib = ps.WeakPDELibrary(
+    library_functions=[lambda x: x, lambda x: x**2, lambda x, y: x * y],
+    spatiotemporal_grid=t_train,
+    is_uniform=True,
+    K=100,
+)
+
+
+# Instantiate and fit the SINDy model with the integral of u_dot
+optimizer = ps.SR3(
+    threshold=0.05, thresholder="l1", max_iter=1000, normalize_columns=False, tol=1e-1
+)
+model = ps.SINDy(feature_library=ode_lib, optimizer=optimizer)
+model.fit(u_train)
+model.print()
