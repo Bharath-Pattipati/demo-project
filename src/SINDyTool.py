@@ -99,3 +99,5 @@ x_test = solve_ivp(
 
 # Compare SINDy-predicted derivatives with finite difference derivatives
 print("Model score: %f" % model.score(x_test, t=dt))
+
+# %%
