@@ -148,6 +148,106 @@ def plot_ensemble_results(
     plt.show()
 
 
+# Make 3d plots comparing a test trajectory,
+# an associated model trajectory, and a second model trajectory.
+def make_3d_plots(x_test, x_sim, constrained_x_sim, last_label):
+    fig = plt.figure(figsize=(10, 6))
+    ax = fig.add_subplot(111, projection="3d")
+    plt.plot(
+        x_test[:, 0],
+        x_test[:, 1],
+        x_test[:, 2],
+        "k",
+        label="Validation Lorenz trajectory",
+    )
+    plt.plot(x_sim[:, 0], x_sim[:, 1], x_sim[:, 2], "r", label="SR3, no constraints")
+    plt.plot(
+        constrained_x_sim[:, 0],
+        constrained_x_sim[:, 1],
+        constrained_x_sim[:, 2],
+        "b",
+        label=last_label,
+    )
+    ax.set_xlabel("x", fontsize=20)
+    ax.set_ylabel("y", fontsize=20)
+    ax.set_zlabel("z", fontsize=20)
+    plt.legend(fontsize=16, framealpha=1.0)
+    plt.show()
+
+
+# Make energy-preserving quadratic constraints for model of size r
+def make_constraints(r):
+    q = 0
+    N = int((r**2 + 3 * r) / 2.0)
+    p = r + r * (r - 1) + int(r * (r - 1) * (r - 2) / 6.0)
+    constraint_zeros = np.zeros(p)
+    constraint_matrix = np.zeros((p, r * N))
+
+    # Set coefficients adorning terms like a_i^3 to zero
+    for i in range(r):
+        constraint_matrix[q, r * (N - r) + i * (r + 1)] = 1.0
+        q = q + 1
+
+    # Set coefficients adorning terms like a_ia_j^2 to be antisymmetric
+    for i in range(r):
+        for j in range(i + 1, r):
+            constraint_matrix[q, r * (N - r + j) + i] = 1.0
+            constraint_matrix[
+                q, r * (r + j - 1) + j + r * int(i * (2 * r - i - 3) / 2.0)
+            ] = 1.0
+            q = q + 1
+    for i in range(r):
+        for j in range(0, i):
+            constraint_matrix[q, r * (N - r + j) + i] = 1.0
+            constraint_matrix[
+                q, r * (r + i - 1) + j + r * int(j * (2 * r - j - 3) / 2.0)
+            ] = 1.0
+            q = q + 1
+
+    # Set coefficients adorning terms like a_ia_ja_k to be antisymmetric
+    for i in range(r):
+        for j in range(i + 1, r):
+            for k in range(j + 1, r):
+                constraint_matrix[
+                    q, r * (r + k - 1) + i + r * int(j * (2 * r - j - 3) / 2.0)
+                ] = 1.0
+                constraint_matrix[
+                    q, r * (r + k - 1) + j + r * int(i * (2 * r - i - 3) / 2.0)
+                ] = 1.0
+                constraint_matrix[
+                    q, r * (r + j - 1) + k + r * int(i * (2 * r - i - 3) / 2.0)
+                ] = 1.0
+                q = q + 1
+
+    return constraint_zeros, constraint_matrix
+
+
+# For Trapping SINDy, use optimal m, and calculate if identified model is stable
+def check_stability(r, Xi, sindy_opt):
+    N = int((r**2 + 3 * r) / 2.0)
+    opt_m = sindy_opt.m_history_[-1]
+    PL_tensor_unsym = sindy_opt.PL_unsym_
+    PL_tensor = sindy_opt.PL_
+    PQ_tensor = sindy_opt.PQ_
+    mPQ = np.tensordot(opt_m, PQ_tensor, axes=([0], [0]))
+    P_tensor = PL_tensor - mPQ
+    As = np.tensordot(P_tensor, Xi, axes=([3, 2], [0, 1]))
+    eigvals, eigvecs = np.linalg.eigh(As)
+    print("optimal m: ", opt_m)
+    print("As eigvals: ", np.sort(eigvals))
+    print(
+        "All As eigenvalues are < 0 and therefore system is globally stable? ",
+        np.all(eigvals < 0),
+    )
+    max_eigval = np.sort(eigvals)[-1]
+    # min_eigval = np.sort(eigvals)[0]
+    L = np.tensordot(PL_tensor_unsym, Xi, axes=([3, 2], [0, 1]))
+    Q = np.tensordot(PQ_tensor, Xi, axes=([4, 3], [0, 1]))
+    d = np.dot(L, opt_m) + np.dot(np.tensordot(Q, opt_m, axes=([2], [0])), opt_m)
+    Rm = np.linalg.norm(d) / np.abs(max_eigval)
+    print("Estimate of trapping region size, Rm = ", Rm)
+
+
 # %% Basic Example
 """
 Dynamical system:
@@ -326,7 +426,9 @@ x_train = solve_ivp(
     lorenz, t_train_span, x0_train, t_eval=t_train, **integrator_keywords
 ).y.T
 
-x_train_noise = x_train + 0.5 * np.random.randn(*x_train.shape)
+# Fit a regular SINDy model with 5% added Gaussian noise
+rmse = mean_squared_error(x_train, np.zeros(x_train.shape))
+x_train_noise = x_train + np.random.normal(0, rmse / 20.0, x_train.shape)
 features_names = ["x", "y", "z"]
 
 # %% Choose hyperparameters
@@ -340,11 +442,11 @@ for i, threshold in enumerate(threshold_scan):
     coefs.append(model.coefficients())  # Store coefficients """
 
 # %% Testing
-""" x0_test = [8, 7, 15]
+x0_test = [8, 7, 15]
 xtest = solve_ivp(
     lorenz, t_train_span, x0_test, t_eval=t_train, **integrator_keywords
 ).y.T
-plot_pareto(coefs, optimizer, model, threshold_scan, xtest, t_train) """
+# plot_pareto(coefs, optimizer, model, threshold_scan, xtest, t_train)
 
 # %% Evaluate
 optimizer = ps.STLSQ(threshold=0.1)
@@ -374,7 +476,7 @@ model.print() """
 
 # %% Robust sparse system identification by ensembling
 # generate lot of models to understand which coefficients show up most frequently
-model.fit(x_train_noise, t=dt, ensemble=True)
+""" model.fit(x_train_noise, t=dt, ensemble=True)
 mean_ensemble = np.mean(model.coef_list, axis=0)  # mean model
 std_ensemble = np.std(model.coef_list, axis=0)  # standard deviation model
 model.coef_ = mean_ensemble
@@ -388,8 +490,147 @@ std_lib_ensemble = np.std(model.coef_list, axis=0)  # standard deviation model
 model.coef_ = mean_ensemble
 model.print()
 
+# error bars on coefficient values
 plot_ensemble_results(
     model, mean_ensemble, std_ensemble, mean_lib_ensemble, std_lib_ensemble
+) """
+
+# %% Use prior physical knowledge to constraint the model
+opt = ps.SR3(threshold=0.5)
+model = ps.SINDy(optimizer=opt, feature_names=features_names)
+model.fit(x_train_noise, t=dt)
+print("SR3 model, no constraints:")
+model.print()
+
+x_sim = model.simulate(x0_test, t_train)
+
+# %% Equality constrained SR3
+""" n_targets = x_train.shape[1]
+library = ps.PolynomialLibrary()
+library.fit(x_train)
+n_features = library.n_output_features_
+
+# Linear Constraints: C * Xi = d
+# 2 equality constraints
+constraint_rhs = np.asarray([0, 28])
+constraint_lhs = np.zeros((2, n_features * n_targets))
+
+# One row per constraint, one column per coefficient
+# coefficients of x and y to be equal and opposite
+# 1 * (x0 coefficient) + 1 * (x1 coefficient) = 0
+constraint_lhs[0, 1] = 1
+constraint_lhs[0, 2] = 1
+
+# coefficients of x in second equation will be = 28
+constraint_lhs[1, 1 + n_features] = 1
+
+optimizer = ps.ConstrainedSR3(
+    constraint_rhs=constraint_rhs,
+    constraint_lhs=constraint_lhs,
+    threshold=0.5,
+    thresholder="l1",
 )
+model = ps.SINDy(
+    optimizer=optimizer, feature_library=library, feature_names=features_names
+)
+model.fit(x_train_noise, t=dt)
+print("Constrained SR3 model, equality constraints:")
+model.print()
+x_constraint_sim = model.simulate(x0_test, t_train)
+
+# Validation data, Simulated data with no constraints, Simulated data with constraints
+make_3d_plots(xtest, x_sim, x_constraint_sim, "ConstrainedSR3, equality constraints") """
+
+# %% Inequality constraints are often more suitable, especially for noisy data
+""" # Repeat with inequality constraints
+eps = 0.5
+constraint_rhs = np.array([eps, eps, 28])
+
+# One row per constraint, one column per coefficient
+n_targets = x_train.shape[1]
+library = ps.PolynomialLibrary()
+library.fit(x_train)
+n_features = library.n_output_features_
+constraint_lhs = np.zeros((3, n_targets * n_features))
+
+# 1 * (x0 coefficient) + 1 * (x1 coefficient) <= eps
+constraint_lhs[0, 1] = 1
+constraint_lhs[0, 2] = 1
+
+# -eps <= 1 * (x0 coefficient) + 1 * (x1 coefficient)
+constraint_lhs[1, 1] = -1
+constraint_lhs[1, 2] = -1
+
+# 1 * (x0 coefficient) <= 28
+constraint_lhs[2, 1 + n_features] = 1
+
+opt = ps.ConstrainedSR3(
+    constraint_rhs=constraint_rhs,
+    constraint_lhs=constraint_lhs,
+    threshold=0.5,
+    inequality_constraints=True,
+    thresholder="l1",
+)
+model = ps.SINDy(optimizer=opt, feature_library=library, feature_names=features_names)
+model.fit(x_train_noise, t=dt)
+print("ConstrainedSR3 model, inequality constraints:")
+model.print()
+constrained_x_sim = model.simulate(x0_test, t=t_train)
+
+# Validation data, Simulated data with no constraints, Simulated data with constraints
+make_3d_plots(xtest, x_sim, constrained_x_sim, "ConstrainedSR3, inequality constraints") """
+
+# %% Use Trapping SINDy for globally stable models
+# define hyperparameters
+threshold = 0
+max_iter = 20000
+eta = 1.0e-2
+constraint_zeros, constraint_matrix = make_constraints(3)
+
+# run trapping SINDy
+sindy_opt = ps.TrappingSR3(
+    threshold=threshold,
+    eta=eta,
+    gamma=-1,
+    max_iter=max_iter,
+    constraint_lhs=constraint_matrix,
+    constraint_rhs=constraint_zeros,
+    constraint_order="feature",
+)
+
+# Initialize quadratic SINDy library, with custom ordering
+library_functions = [lambda x: x, lambda x, y: x * y, lambda x: x**2]
+library_function_names = [lambda x: x, lambda x, y: x + y, lambda x: x + x]
+sindy_library = ps.CustomLibrary(
+    library_functions=library_functions, function_names=library_function_names
+)
+
+model = ps.SINDy(
+    optimizer=sindy_opt,
+    feature_library=sindy_library,
+)
+model.fit(x_train, t=dt, quiet=True)
+model.print()
+
+Xi = model.coefficients().T
+check_stability(3, Xi, sindy_opt)
+
+# %% show that new model trajectories are all stable
+fig = plt.figure(figsize=(14, 6))
+ax = fig.add_subplot(111, projection="3d")
+for i in range(10):
+    x0_new = (np.random.rand(3) - 0.5) * 200
+    x_test_new = solve_ivp(
+        lorenz, t_train_span, x0_new, t_eval=t_train, **integrator_keywords
+    ).y.T
+    ax.plot(x_test_new[:, 0], x_test_new[:, 1], x_test_new[:, 2], "k")
+    x_test_pred_new = model.simulate(x0_new, t=t_train, integrator="odeint")
+    plt.plot(x_test_pred_new[:, 0], x_test_pred_new[:, 1], x_test_pred_new[:, 2], "b")
+    ax.set_xlabel("x", fontsize=20)
+    ax.set_ylabel("y", fontsize=20)
+    ax.set_zlabel("z", fontsize=20)
+    plt.legend(
+        ["Validation Lorenz trajectory", "TrappingSR3"], fontsize=16, framealpha=1.0
+    )
 
 # %%
