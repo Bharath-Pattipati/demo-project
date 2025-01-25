@@ -40,6 +40,64 @@ integrator_keywords["rtol"] = 1e-12
 integrator_keywords["method"] = "LSODA"
 integrator_keywords["atol"] = 1e-12
 
+
+# %% Plotting functions
+# Make coefficient plot for threshold scan
+def plot_pareto(coefs, opt, model, threshold_scan, x_test, t_test):
+    dt = t_test[1] - t_test[0]
+    mse = np.zeros(len(threshold_scan))
+    mse_sim = np.zeros(len(threshold_scan))
+    for i in range(len(threshold_scan)):
+        opt.coef_ = coefs[i]
+        mse[i] = model.score(x_test, t=dt, metric=mean_squared_error)
+        x_test_sim = model.simulate(x_test[0, :], t_test, integrator="odeint")
+        if np.any(x_test_sim > 1e4):
+            x_test_sim = 1e4
+        mse_sim[i] = np.sum((x_test - x_test_sim) ** 2)
+    plt.figure()
+    plt.semilogy(threshold_scan, mse, "bo")
+    plt.semilogy(threshold_scan, mse, "b")
+    plt.ylabel(r"$\dot{X}$ RMSE", fontsize=20)
+    plt.xlabel(r"$\lambda$", fontsize=20)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.grid(True)
+    plt.figure()
+    plt.semilogy(threshold_scan, mse_sim, "bo")
+    plt.semilogy(threshold_scan, mse_sim, "b")
+    plt.ylabel(r"$\dot{X}$ RMSE", fontsize=20)
+    plt.xlabel(r"$\lambda$", fontsize=20)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.grid(True)
+    plt.show()
+
+
+# Make plots of the data and its time derivative
+def plot_data_and_derivative(x, dt, deriv):
+    feature_name = ["x", "y", "z"]
+    plt.figure(figsize=(20, 5))
+    for i in range(3):
+        plt.subplot(1, 3, i + 1)
+        plt.plot(x[:, i], label=feature_name[i])
+        plt.grid(True)
+        plt.xlabel("t", fontsize=24)
+        plt.xticks(fontsize=18)
+        plt.yticks(fontsize=18)
+        plt.legend(fontsize=24)
+    x_dot = deriv(x, t=dt)
+    plt.figure(figsize=(20, 5))
+    for i in range(3):
+        plt.subplot(1, 3, i + 1)
+        plt.plot(x_dot[:, i], label=r"$\dot{" + feature_name[i] + "}$")
+        plt.grid(True)
+        plt.xlabel("t", fontsize=24)
+        plt.xticks(fontsize=18)
+        plt.yticks(fontsize=18)
+        plt.legend(fontsize=24)
+    plt.show()
+
+
 # %% Basic Example
 """
 Dynamical system:
@@ -146,7 +204,7 @@ model.print()
  """
 
 # %% Performance improves as number of sub-domain integration points increases
-# Generate measurement data
+""" # Generate measurement data
 dt = 0.001
 t_train = np.arange(0, 10, dt)
 t_train_span = (t_train[0], t_train[-1])
@@ -206,4 +264,61 @@ plt.title("Convergence of weak SINDy, hyperparameter scan", fontsize=12)
 plt.plot(K_scan, errs)
 plt.xlabel("Number of subdomains", fontsize=16)
 plt.ylabel("Error", fontsize=16)
-plt.show()
+plt.show() """
+
+# %% PySINDY tutorial
+# Generate measurement data
+dt = 0.002
+t_train = np.arange(0, 10, dt)
+t_train_span = (t_train[0], t_train[-1])
+x0_train = [-8, 8, 27]  # Initial conditions
+x_train = solve_ivp(
+    lorenz, t_train_span, x0_train, t_eval=t_train, **integrator_keywords
+).y.T
+
+x_train_noise = x_train + 0.1 * np.random.randn(*x_train.shape)
+
+# Choose hyperparameters
+features_names = ["x", "y", "z"]
+threshold_scan = np.linspace(0, 1, 11)
+coefs = []
+for i, threshold in enumerate(threshold_scan):
+    optimizer = ps.STLSQ(threshold=threshold)
+    model = ps.SINDy(optimizer=optimizer, feature_names=features_names)
+    model.fit(x_train_noise, t=dt)
+    coefs.append(model.coefficients())  # Store coefficients
+
+# %% Testing
+x0_test = [8, 7, 15]
+xtest = solve_ivp(
+    lorenz, t_train_span, x0_test, t_eval=t_train, **integrator_keywords
+).y.T
+plot_pareto(coefs, optimizer, model, threshold_scan, xtest, t_train)
+
+# %% Evaluate
+optimizer = ps.STLSQ(threshold=0.6)
+model = ps.SINDy(optimizer=optimizer, feature_names=features_names)
+model.fit(x_train_noise, t=dt)
+model.print()
+
+# %% Differentiation Methods Comparison
+plot_data_and_derivative(x_train_noise, dt, ps.FiniteDifference())
+plot_data_and_derivative(x_train_noise, dt, ps.SmoothedFiniteDifference())
+
+# %% Add more data to get better fit
+# Generate measurement data with different initial conditions
+optimizer = ps.STLSQ(threshold=0.1)
+n_trajectories = 40
+x0s = (np.random.rand(n_trajectories, 3) - 0.5) * 20
+x_train_multi = []
+for i in range(n_trajectories):
+    x_train_temp = solve_ivp(
+        lorenz, t_train_span, x0s[i], t_eval=t_train, **integrator_keywords
+    ).y.T
+    x_train_multi.append(x_train_temp + 0.1 * np.random.randn(*x_train_temp.shape))
+
+model = ps.SINDy(optimizer=optimizer, feature_names=features_names)
+model.fit(x_train_multi, t=dt, multiple_trajectories=True)
+model.print()
+
+# %%
