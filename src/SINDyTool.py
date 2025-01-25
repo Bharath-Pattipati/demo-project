@@ -98,6 +98,56 @@ def plot_data_and_derivative(x, dt, deriv):
     plt.show()
 
 
+# Make an errorbar coefficient plot from the results of ensembling
+def plot_ensemble_results(
+    model, mean_ensemble, std_ensemble, mean_library_ensemble, std_library_ensemble
+):
+    # Plot results
+    feature_names = model.get_feature_names()
+    xticklabels = [""] * 10
+    for i in range(10):
+        xticklabels[i] = "$" + feature_names[i] + "$"
+    plt.figure(figsize=(18, 4))
+    colors = ["b", "r", "k"]
+    plt.subplot(1, 2, 1)
+    plt.xlabel("Candidate terms", fontsize=22)
+    plt.ylabel("Coefficient values", fontsize=22)
+    for i in range(3):
+        plt.errorbar(
+            range(10),
+            mean_ensemble[i, :],
+            yerr=std_ensemble[i, :],
+            fmt="o",
+            color=colors[i],
+            label=r"Equation for $\dot{" + feature_names[i] + r"}$",
+        )
+    ax = plt.gca()
+    plt.grid(True)
+    ax.set_xticks(range(10))
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    ax.set_xticklabels(xticklabels, verticalalignment="top")
+    plt.subplot(1, 2, 2)
+    plt.xlabel("Candidate terms", fontsize=22)
+    for i in range(3):
+        plt.errorbar(
+            range(10),
+            mean_library_ensemble[i, :],
+            yerr=std_library_ensemble[i, :],
+            fmt="o",
+            color=colors[i],
+            label=r"Equation for $\dot{" + feature_names[i] + r"}$",
+        )
+    ax = plt.gca()
+    plt.grid(True)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.legend(fontsize=16, loc="upper right")
+    ax.set_xticks(range(10))
+    ax.set_xticklabels(xticklabels, verticalalignment="top")
+    plt.show()
+
+
 # %% Basic Example
 """
 Dynamical system:
@@ -276,38 +326,39 @@ x_train = solve_ivp(
     lorenz, t_train_span, x0_train, t_eval=t_train, **integrator_keywords
 ).y.T
 
-x_train_noise = x_train + 0.1 * np.random.randn(*x_train.shape)
-
-# Choose hyperparameters
+x_train_noise = x_train + 0.5 * np.random.randn(*x_train.shape)
 features_names = ["x", "y", "z"]
+
+# %% Choose hyperparameters
+""" 
 threshold_scan = np.linspace(0, 1, 11)
 coefs = []
 for i, threshold in enumerate(threshold_scan):
     optimizer = ps.STLSQ(threshold=threshold)
     model = ps.SINDy(optimizer=optimizer, feature_names=features_names)
     model.fit(x_train_noise, t=dt)
-    coefs.append(model.coefficients())  # Store coefficients
+    coefs.append(model.coefficients())  # Store coefficients """
 
 # %% Testing
-x0_test = [8, 7, 15]
+""" x0_test = [8, 7, 15]
 xtest = solve_ivp(
     lorenz, t_train_span, x0_test, t_eval=t_train, **integrator_keywords
 ).y.T
-plot_pareto(coefs, optimizer, model, threshold_scan, xtest, t_train)
+plot_pareto(coefs, optimizer, model, threshold_scan, xtest, t_train) """
 
 # %% Evaluate
-optimizer = ps.STLSQ(threshold=0.6)
+optimizer = ps.STLSQ(threshold=0.1)
 model = ps.SINDy(optimizer=optimizer, feature_names=features_names)
 model.fit(x_train_noise, t=dt)
 model.print()
 
 # %% Differentiation Methods Comparison
-plot_data_and_derivative(x_train_noise, dt, ps.FiniteDifference())
+""" plot_data_and_derivative(x_train_noise, dt, ps.FiniteDifference())
 plot_data_and_derivative(x_train_noise, dt, ps.SmoothedFiniteDifference())
-
+ """
 # %% Add more data to get better fit
 # Generate measurement data with different initial conditions
-optimizer = ps.STLSQ(threshold=0.1)
+""" optimizer = ps.STLSQ(threshold=0.1)
 n_trajectories = 40
 x0s = (np.random.rand(n_trajectories, 3) - 0.5) * 20
 x_train_multi = []
@@ -319,6 +370,26 @@ for i in range(n_trajectories):
 
 model = ps.SINDy(optimizer=optimizer, feature_names=features_names)
 model.fit(x_train_multi, t=dt, multiple_trajectories=True)
+model.print() """
+
+# %% Robust sparse system identification by ensembling
+# generate lot of models to understand which coefficients show up most frequently
+model.fit(x_train_noise, t=dt, ensemble=True)
+mean_ensemble = np.mean(model.coef_list, axis=0)  # mean model
+std_ensemble = np.std(model.coef_list, axis=0)  # standard deviation model
+model.coef_ = mean_ensemble
 model.print()
+
+model.fit(
+    x_train_noise, t=dt, library_ensemble=True
+)  # removing library terms that are not present in all models
+mean_lib_ensemble = np.mean(model.coef_list, axis=0)  # mean model
+std_lib_ensemble = np.std(model.coef_list, axis=0)  # standard deviation model
+model.coef_ = mean_ensemble
+model.print()
+
+plot_ensemble_results(
+    model, mean_ensemble, std_ensemble, mean_lib_ensemble, std_lib_ensemble
+)
 
 # %%
