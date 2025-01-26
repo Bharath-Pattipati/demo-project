@@ -14,15 +14,17 @@ PySINDy has been written to be as compatible with scikit-learn objects and metho
 
 # %% Library import
 import pysindy as ps
-
+# import os
 # pysindy version
 # print(ps.__version__)
 # from cvxpy import ECOS, OSQP
 
-# from pysindy.utils import lorenz
+from pysindy.utils import lorenz
+from pysindy.utils import lorenz_control
 
-from pysindy.utils import enzyme
+# from pysindy.utils import enzyme
 import numpy as np
+# from scipy.io import loadmat
 
 # import pandas as pd
 from scipy.integrate import solve_ivp
@@ -253,6 +255,27 @@ def check_stability(r, Xi, sindy_opt):
     d = np.dot(L, opt_m) + np.dot(np.tensordot(Q, opt_m, axes=([2], [0])), opt_m)
     Rm = np.linalg.norm(d) / np.abs(max_eigval)
     print("Estimate of trapping region size, Rm = ", Rm)
+
+
+# Plot Kuramoto-Sivashinsky data and its derivative
+def plot_u_and_u_dot(t, x, u):
+    dt = t[1] - t[0]
+    plt.figure(figsize=(10, 4))
+    plt.subplot(1, 2, 1)
+    plt.pcolormesh(t, x, u[:, :, 0])
+    plt.xlabel("t", fontsize=16)
+    plt.ylabel("x", fontsize=16)
+    plt.title(r"$u(x, t)$", fontsize=16)
+    u_dot = ps.FiniteDifference(axis=1)._differentiate(u, t=dt)
+    plt.subplot(1, 2, 2)
+    plt.pcolormesh(t, x, u_dot[:, :, 0])
+    plt.xlabel("t", fontsize=16)
+    plt.ylabel("x", fontsize=16)
+    ax = plt.gca()
+    ax.set_yticklabels([])
+    plt.title(r"$\dot{u}(x, t)$", fontsize=16)
+    plt.show()
+    return u_dot
 
 
 # %% Basic Example
@@ -678,7 +701,7 @@ weak_form_std = np.std(weak_form_models, axis=0)
 plot_ensemble_results(model, regular_mean, regular_std, weak_form_mean, weak_form_std) """
 
 # %% Implicit ODE using SINDy-PI
-# define parameters
+""" # define parameters
 r = 1
 dt = 0.001
 T = 4
@@ -727,8 +750,130 @@ model = ps.SINDy(
     differentiation_method=ps.FiniteDifference(drop_endpoints=True),
 )
 model.fit(x_train, t=t)
-model.print()
+model.print() """
 
 # sindy_library.get_feature_names()
+
+# %% Identifying PDEs
+""" # Load data from .mat file
+data = loadmat(
+    os.path.join("..", "demo-project", "data", "raw", "kuramoto_sivishinky.mat")
+)
+t = np.ravel(data["tt"])
+dt = t[1] - t[0]
+x = np.ravel(data["x"])
+u = data["uu"]
+u = u.reshape(len(x), len(t), 1)
+u_dot = plot_u_and_u_dot(t, x, u)
+
+# Define PDE library that is quadratic in u,
+# and fourth-order in spatial derivatives of u.
+library_functions = [lambda x: x, lambda x: x * x]
+library_function_names = [lambda x: x, lambda x: x + x]
+pde_lib = ps.PDELibrary(
+    library_functions=library_functions,
+    function_names=library_function_names,
+    derivative_order=4,
+    spatial_grid=x,
+    is_uniform=True,
+)
+
+# Again, loop through all the optimizers
+print("STLSQ model: ")
+optimizer = ps.STLSQ(threshold=30, normalize_columns=True)
+model = ps.SINDy(feature_library=pde_lib, feature_names=["u"], optimizer=optimizer)
+model.fit(u, t=dt)
+model.print() """
+
+
+# %% Building complex candidate libraries
+# define the testing and training data for the Lorenz system with control
+def u_fun(t):
+    return np.column_stack([np.sin(2 * t), t**2])
+
+
+# Generate measurement data
+dt = 0.002
+
+t_train = np.arange(0, t_end_train, dt)
+x0_train = [-8, 8, 27]
+t_train_span = (t_train[0], t_train[-1])
+x_train = solve_ivp(
+    lorenz, t_train_span, x0_train, t_eval=t_train, **integrator_keywords
+).y.T
+feature_names = ["x", "y", "z"]
+
+x_train_control = solve_ivp(
+    lorenz_control,
+    t_train_span,
+    x0_train,
+    t_eval=t_train,
+    args=(u_fun,),
+    **integrator_keywords,
+).y.T
+u_train_control = u_fun(t_train)
+
+identity_library = ps.IdentityLibrary()
+fourier_library = ps.FourierLibrary()
+combined_library = identity_library + fourier_library
+
+model = ps.SINDy(feature_library=combined_library, feature_names=feature_names)
+model.fit(x_train, t=dt)
+model.get_feature_names()
+
+# Tensor 2 libraries together
+poly_library = ps.PolynomialLibrary(include_bias=False)
+fourier_library = ps.FourierLibrary()
+combined_library = poly_library * fourier_library
+
+model = ps.SINDy(feature_library=combined_library, feature_names=feature_names)
+model.fit(x_train, t=dt)
+model.get_feature_names()
+
+# Generalized Library
+# Initialize three libraries
+poly_library = ps.PolynomialLibrary()
+fourier_library = ps.FourierLibrary()
+library_functions = [lambda x: 1.0 / (x + 100), lambda x: np.exp(-x)]
+library_function_names = [
+    lambda x: "1.0 / (" + x + " + 100)",
+    lambda x: "exp(-" + x + ")",
+]
+custom_library = ps.CustomLibrary(
+    library_functions=library_functions, function_names=library_function_names
+)
+
+# Initialize the default inputs, i.e. each library
+# uses all the input variables, (5 inputs and 3 libraries here)
+inputs_temp = np.tile([0, 1, 2, 3, 4], 3)
+inputs_per_library = np.reshape(inputs_temp, (3, 5))
+
+# Don't use the x, u0, u1 inputs for generating the Fourier library
+inputs_per_library[1, 2] = 1
+inputs_per_library[1, 3] = 1
+inputs_per_library[1, 4] = 1
+
+# Don't use the y, z, u0 inputs for generating the custom library
+inputs_per_library[2, 1] = 0
+inputs_per_library[2, 2] = 0
+inputs_per_library[2, 3] = 0
+print(inputs_per_library)
+
+# Tensor all the polynomial and Fourier library terms together
+# and tensor all the Fourier and Custom library terms together.
+tensor_array = [[1, 1, 0], [0, 1, 1]]
+
+# Initialize this generalized library, all the work hidden from the user!
+generalized_library = ps.GeneralizedLibrary(
+    [poly_library, fourier_library, custom_library],
+    tensor_array=tensor_array,
+    inputs_per_library=inputs_per_library,
+)
+
+# Fit the model and print the library feature names to check success
+model = ps.SINDy(feature_library=generalized_library)
+model.fit(x_train_control, u=u_train_control, t=dt, quiet=True)
+model.print()
+model.get_feature_names()
 
 # %%
