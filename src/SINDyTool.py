@@ -14,7 +14,14 @@ PySINDy has been written to be as compatible with scikit-learn objects and metho
 
 # %% Library import
 import pysindy as ps
-from pysindy.utils import lorenz
+
+# pysindy version
+# print(ps.__version__)
+# from cvxpy import ECOS, OSQP
+
+# from pysindy.utils import lorenz
+
+from pysindy.utils import enzyme
 import numpy as np
 
 # import pandas as pd
@@ -224,7 +231,7 @@ def make_constraints(r):
 
 # For Trapping SINDy, use optimal m, and calculate if identified model is stable
 def check_stability(r, Xi, sindy_opt):
-    N = int((r**2 + 3 * r) / 2.0)
+    # N = int((r**2 + 3 * r) / 2.0)
     opt_m = sindy_opt.m_history_[-1]
     PL_tensor_unsym = sindy_opt.PL_unsym_
     PL_tensor = sindy_opt.PL_
@@ -257,8 +264,8 @@ Solution:
     x(t) = x(0) * exp(-2t)
     y(t) = y(0) * exp(t)
 """
-# Construct data matrix: solutions of ODEs
-""" t = np.linspace(0, 1, 100)
+""" # Construct data matrix: solutions of ODEs
+t = np.linspace(0, 1, 100)
 x_0 = 3
 y_0 = 0.5
 x = x_0 * np.exp(-2 * t)
@@ -273,9 +280,8 @@ model.fit(X, t=t)
 model.print() """
 
 # %% Lorenz System
-""" 
 
-# Generate measurement data
+""" # Generate measurement data
 dt = 0.002
 
 t_train = np.arange(0, t_end_train, dt)
@@ -418,7 +424,7 @@ plt.show() """
 
 # %% PySINDY tutorial
 # Generate measurement data
-dt = 0.002
+""" dt = 0.002
 t_train = np.arange(0, 10, dt)
 t_train_span = (t_train[0], t_train[-1])
 x0_train = [-8, 8, 27]  # Initial conditions
@@ -428,8 +434,8 @@ x_train = solve_ivp(
 
 # Fit a regular SINDy model with 5% added Gaussian noise
 rmse = mean_squared_error(x_train, np.zeros(x_train.shape))
-x_train_noise = x_train + np.random.normal(0, rmse / 20.0, x_train.shape)
-features_names = ["x", "y", "z"]
+x_train_noise = x_train + np.random.normal(0, rmse / 5.0, x_train.shape)
+features_names = ["x", "y", "z"] """
 
 # %% Choose hyperparameters
 """ 
@@ -442,17 +448,17 @@ for i, threshold in enumerate(threshold_scan):
     coefs.append(model.coefficients())  # Store coefficients """
 
 # %% Testing
-x0_test = [8, 7, 15]
+""" x0_test = [8, 7, 15]
 xtest = solve_ivp(
     lorenz, t_train_span, x0_test, t_eval=t_train, **integrator_keywords
-).y.T
+).y.T """
 # plot_pareto(coefs, optimizer, model, threshold_scan, xtest, t_train)
 
 # %% Evaluate
-optimizer = ps.STLSQ(threshold=0.1)
+""" optimizer = ps.STLSQ(threshold=0.1)
 model = ps.SINDy(optimizer=optimizer, feature_names=features_names)
 model.fit(x_train_noise, t=dt)
-model.print()
+model.print() """
 
 # %% Differentiation Methods Comparison
 """ plot_data_and_derivative(x_train_noise, dt, ps.FiniteDifference())
@@ -496,13 +502,13 @@ plot_ensemble_results(
 ) """
 
 # %% Use prior physical knowledge to constraint the model
-opt = ps.SR3(threshold=0.5)
+""" opt = ps.SR3(threshold=0.5)
 model = ps.SINDy(optimizer=opt, feature_names=features_names)
 model.fit(x_train_noise, t=dt)
 print("SR3 model, no constraints:")
 model.print()
 
-x_sim = model.simulate(x0_test, t_train)
+x_sim = model.simulate(x0_test, t_train) """
 
 # %% Equality constrained SR3
 """ n_targets = x_train.shape[1]
@@ -581,7 +587,7 @@ constrained_x_sim = model.simulate(x0_test, t=t_train)
 make_3d_plots(xtest, x_sim, constrained_x_sim, "ConstrainedSR3, inequality constraints") """
 
 # %% Use Trapping SINDy for globally stable models
-# define hyperparameters
+""" # define hyperparameters
 threshold = 0
 max_iter = 20000
 eta = 1.0e-2
@@ -613,10 +619,10 @@ model.fit(x_train, t=dt, quiet=True)
 model.print()
 
 Xi = model.coefficients().T
-check_stability(3, Xi, sindy_opt)
+check_stability(3, Xi, sindy_opt) """
 
 # %% show that new model trajectories are all stable
-fig = plt.figure(figsize=(14, 6))
+""" fig = plt.figure(figsize=(14, 6))
 ax = fig.add_subplot(111, projection="3d")
 for i in range(10):
     x0_new = (np.random.rand(3) - 0.5) * 200
@@ -631,6 +637,98 @@ for i in range(10):
     ax.set_zlabel("z", fontsize=20)
     plt.legend(
         ["Validation Lorenz trajectory", "TrappingSR3"], fontsize=16, framealpha=1.0
-    )
+    ) """
+
+# %% Weak formulation of SINDy
+""" library_functions = [lambda x: x, lambda x, y: x * y, lambda x: x**2]
+library_function_names = [lambda x: x, lambda x, y: x + y, lambda x: x + x]
+
+ode_lib = ps.WeakPDELibrary(
+    library_functions=library_functions,
+    function_names=library_function_names,
+    spatiotemporal_grid=t_train,
+    include_bias=True,
+)
+rmse = mean_squared_error(x_train, np.zeros(x_train.shape))
+x_train_added_noise = x_train + np.random.normal(0, rmse / 10.0, x_train.shape)
+
+# Fit a normal SINDy model
+optimizer = ps.STLSQ()
+model = ps.SINDy(feature_names=features_names, optimizer=optimizer)
+model.fit(x_train_added_noise, t=dt, ensemble=True)
+
+print(r"Normal SINDy result on 10% Lorenz noise: ")
+model.print()
+regular_models = model.coef_list
+regular_mean = np.mean(regular_models, axis=0)
+regular_std = np.std(regular_models, axis=0)
+
+# Instantiate and fit a weak formulation SINDy model
+optimizer = ps.STLSQ()
+model = ps.SINDy(
+    feature_library=ode_lib, feature_names=features_names, optimizer=optimizer
+)
+model.fit(x_train_added_noise, t=dt, ensemble=True)
+print(r"Weak form result on 10% Lorenz noise: ")
+model.print()
+weak_form_models = model.coef_list
+weak_form_mean = np.mean(weak_form_models, axis=0)
+weak_form_std = np.std(weak_form_models, axis=0)
+
+plot_ensemble_results(model, regular_mean, regular_std, weak_form_mean, weak_form_std) """
+
+# %% Implicit ODE using SINDy-PI
+# define parameters
+r = 1
+dt = 0.001
+T = 4
+t = np.arange(0, T + dt, dt)
+t_span = (t[0], t[-1])
+x0_train = [0.55]
+x_train = solve_ivp(enzyme, t_span, x0_train, t_eval=t, **integrator_keywords).y.T
+
+# Initialize custom SINDy library
+x_library_functions = [
+    lambda x: x,
+    lambda x, y: x * y,
+    lambda x: x**2,
+]
+x_dot_library_functions = [lambda x: x]
+
+# library function names includes both the
+# x_library_functions and x_dot_library_functions names.
+library_function_names = [
+    lambda x: x,
+    lambda x, y: x + y,
+    lambda x: x + x,
+    lambda x: x,
+]
+
+# Need to pass time base to the library so can build the x_dot library from x
+sindy_library = ps.SINDyPILibrary(
+    library_functions=x_library_functions,
+    x_dot_library_functions=x_dot_library_functions,
+    t=t,
+    function_names=library_function_names,
+    include_bias=True,
+)
+
+sindy_opt = ps.SINDyPI(
+    threshold=1e-6,
+    tol=1e-8,
+    thresholder="l1",
+    max_iter=20000,
+)
+
+
+model = ps.SINDy(
+    optimizer=sindy_opt,
+    feature_library=sindy_library,
+    differentiation_method=ps.FiniteDifference(drop_endpoints=True),
+)
+model.fit(x_train, t=t)
+model.print()
+
+# sindy_library.get_feature_names()
 
 # %%
