@@ -1,12 +1,12 @@
 # %% Import Libraries
 import torch
-import math
+# import math
 
 # import torchvision
 # import torchvision.transforms as transforms
 
-# import torch.nn as nn
-# import torch.nn.functional as F
+import torch.nn as nn
+import torch.nn.functional as F
 # import torch.optim as optim
 
 # import random
@@ -19,6 +19,25 @@ import math
 # %% Basic
 """x = torch.rand(5, 3)
 print(x)"""
+
+""" x = [[5, 3], [0, 9]]
+y = torch.tensor(x)
+print(y) """
+
+""" # random numbers from uniform distribution on interval [0, 1)
+x = torch.rand(4, 4)
+y = torch.rand(4, 4)
+print(x)
+print(x.device)
+
+z = torch.vstack([x, y])
+print(z)
+
+# tensor of shape (2,4,4)
+z = torch.stack([x, y], dim=2)
+print(z)
+
+print(z[3,3,0]) """
 
 # %% Andrej Karpathy Tutorial
 # The spelled-out intro to neural networks and backpropagation: building micrograds
@@ -299,6 +318,8 @@ labels = torch.rand(1, 1000)
 # forward pass
 predictions = model(data)
 loss = (predictions - labels).sum()
+print(loss.grad_fn)
+print(model.conv1.weight.grad)
 
 # backward pass: computes gradient of the loss with respect to model parameters
 loss.backward()
@@ -403,6 +424,29 @@ output = net(input)  # forward pass
 loss = criterion(output, target)  # compute loss
 loss.backward()  # backward pass
 optimizer.step()  # Update weights """
+
+
+# %% Simple Neural Net
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(32 * 32, 100)
+        self.fc2 = nn.Linear(100, 10)
+
+    def forward(self, x):
+        x = torch.flatten(x, 1)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+
+net = Net()
+predictions = net.forward(torch.randn(1, 1, 32, 32))
+print(len(list(net.parameters())))
+
+# names of net parameters
+for name, param in net.named_parameters():
+    print(name, param.size())
 
 # %% Training Classifier CIFAR-10 dataset [size: 3x32x32]
 # For vision, we have created a package called torchvision, that has data loaders for common datasets such as ImageNet, CIFAR10, MNIST, etc.
@@ -574,7 +618,7 @@ optimizer.step()  # Update weights """
     inputs, labels = inputs.to(device), labels.to(device) """
 
 # %% NN Package: Polynomial Regression
-
+""" 
 # Create Tensors to hold input and outputs.
 x = torch.linspace(-math.pi, math.pi, 2000)
 y = torch.sin(x)
@@ -637,4 +681,6 @@ linear_layer = model[0]
 # For linear layer, its parameters are stored as `weight` and `bias`.
 print(
     f"Result: y = {linear_layer.bias.item()} + {linear_layer.weight[:, 0].item()} x + {linear_layer.weight[:, 1].item()} x^2 + {linear_layer.weight[:, 2].item()} x^3"
-)
+) """
+
+# %% Future Tutorials
