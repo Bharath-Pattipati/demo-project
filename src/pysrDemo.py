@@ -10,7 +10,7 @@ import numpy as np
 from pysr import PySRRegressor
 
 # import key libraries
-import sympy
+# import sympy
 # from matplotlib import pyplot as plt
 
 # from sklearn.model_selection import train_test_split
@@ -22,7 +22,7 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader, TensorDataset
 import pytorch_lightning as pl
 
-from multiprocessing import cpu_count
+# from multiprocessing import cpu_count
 from sklearn.model_selection import train_test_split
 import pickle as pkl
 
@@ -140,12 +140,12 @@ model.sympy() """
 
 # %% Julia Packages and Types: Custom Operators in Julia
 # PySR uses SymbolicRegression.jl as its search backend
-jl.seval(
-    """
+# jl.seval(
+"""
     import Pkg
     Pkg.add("Primes")
-    """
-)
+"""
+# )
 
 jl.seval("using Primes: prime")  # import Primes.jl
 
@@ -153,8 +153,8 @@ jl.seval("using Primes: prime")  # import Primes.jl
 # p first checks whether the input is between 0.5 and 1000. If out-of-bounds, it returns NaN.
 # If in-bounds, it rounds it to the nearest integer, computes the corresponding prime number,
 # and then converts it to the same type as input.
-jl.seval(
-    """
+# jl.seval(
+"""
     function p(i::T) where T
         if 0.5 < i < 1000
             return T(prime(round(Int, i)))
@@ -162,10 +162,10 @@ jl.seval(
             return T(NaN)
         end
     end
-    """
-)
+"""
+# )
 
-primes = {i: jl.p(i * 1.0) for i in range(1, 999)}
+""" primes = {i: jl.p(i * 1.0) for i in range(1, 999)}
 
 X = np.random.randint(0, 100, 100)[:, None]
 y = [primes[3 * X[i, 0] + 1] - 5 + np.random.randn() * 0.001 for i in range(100)]
@@ -183,7 +183,7 @@ model = PySRRegressor(
 )
 
 model.fit(X, y)
-model.sympy()
+model.sympy() """
 
 # %% High-dimensional input: Neural Nets + Symbolic Regression
 # even if we impose inductive bias, the search space is the square of number of possible equations.
@@ -201,7 +201,7 @@ X.shape, y.shape
 # %% Neural Net Definition
 # learn 2 neural nets f and g each a MLP. We will sum over g the same as our equation but won't define the summed part beforehand.
 # Then fit g and f separately using symbolic regression.
-# Warning: import torch after already starting PyJulia. This is required doe to interference between their
+# Warning: import torch after already starting PyJulia. This is required due to interference between their
 # C bindings. If you use torch and then PyJulia, you will likely hit a segfault.
 hidden = 128
 total_steps = 50_000
@@ -259,11 +259,11 @@ zt = torch.tensor(z).float()
 X_train, X_test, z_train, z_test = train_test_split(Xt, zt, random_state=0)
 train_set = TensorDataset(X_train, z_train)
 train = DataLoader(
-    train_set, batch_size=128, num_workers=cpu_count(), shuffle=True, pin_memory=True
+    train_set, batch_size=128, num_workers=0, shuffle=True, pin_memory=True
 )
 
 test_set = TensorDataset(X_test, z_test)
-test = DataLoader(test_set, batch_size=256, num_workers=cpu_count(), pin_memory=True)
+test = DataLoader(test_set, batch_size=128, num_workers=0, pin_memory=True)
 
 # %% Train model with PyTorch Lightning on GPU
 pl.seed_everything(0)
@@ -273,6 +273,7 @@ model.max_lr = 1e-2
 
 trainer = pl.Trainer(
     max_steps=total_steps,
+    accelerator="gpu",
     devices=1,
 )
 
@@ -319,3 +320,5 @@ model = PySRRegressor(
 model.fit(g_input[f_sample_idx], g_output[f_sample_idx])
 model.sympy()
 model.equations_[["complexity", "loss", "equation"]]
+
+# %%
