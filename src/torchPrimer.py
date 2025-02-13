@@ -427,7 +427,7 @@ optimizer.step()  # Update weights """
 
 
 # %% Simple Neural Net
-class Net(nn.Module):
+""" class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(32 * 32, 100)
@@ -446,7 +446,7 @@ print(len(list(net.parameters())))
 
 # names of net parameters
 for name, param in net.named_parameters():
-    print(name, param.size())
+    print(name, param.size()) """
 
 # %% Training Classifier CIFAR-10 dataset [size: 3x32x32]
 # For vision, we have created a package called torchvision, that has data loaders for common datasets such as ImageNet, CIFAR10, MNIST, etc.
@@ -683,4 +683,100 @@ print(
     f"Result: y = {linear_layer.bias.item()} + {linear_layer.weight[:, 0].item()} x + {linear_layer.weight[:, 1].item()} x^2 + {linear_layer.weight[:, 2].item()} x^3"
 ) """
 
-# %% Future Tutorials
+
+# %% Self-Attention Class
+class SelfAttention(nn.Module):
+    def __init__(self, d_model=2, row_dim=0, col_dim=1):
+        ## d_model = the number of embedding values per token.
+        ##           Because we want to be able to do the math by hand, we've
+        ##           the default value for d_model=2.
+        ##           However, in "Attention Is All You Need" d_model=512
+        ##
+        ## row_dim, col_dim = the indices we should use to access rows or columns
+        super().__init__()
+
+        ## Initialize the Weights (W) that we'll use to create the
+        ## query (q), key (k) and value (v) for each token
+        ## NOTE: A lot of implementations include bias terms when
+        ##       creating the queries, keys, and values, but
+        ##       the original manuscript that described Attention,
+        ##       "Attention Is All You Need" did not, so we won't either
+        self.W_q = nn.Linear(in_features=d_model, out_features=d_model, bias=False)
+        self.W_k = nn.Linear(in_features=d_model, out_features=d_model, bias=False)
+        self.W_v = nn.Linear(in_features=d_model, out_features=d_model, bias=False)
+
+        self.row_dim = row_dim
+        self.col_dim = col_dim
+
+    def forward(self, token_encodings):
+        ## Create the query, key and values using the encoding numbers
+        ## associated with each token (token encodings)
+        q = self.W_q(token_encodings)
+        k = self.W_k(token_encodings)
+        v = self.W_v(token_encodings)
+
+        # Compute similarity scores: (q * k^T)
+        sims = torch.matmul(q, k.transpose(dim0=self.row_dim, dim1=self.col_dim))
+
+        # Scalre the similarities by dividing by the square root of the dimension of the key vectors
+        scaled_sims = sims / torch.tensor(k.size(self.col_dim) ** 0.5)
+
+        # Apply softmax to the similarity scores to determine what percent of each tokens value to use in final attention values.
+        attention_percents = F.softmax(scaled_sims, dim=self.col_dim)
+
+        # Scale the values by their associated percentages and add them up
+        attention_scores = torch.matmul(attention_percents, v)
+
+        return attention_scores
+
+
+# %% Calculate Self-Attention
+## create a matrix of token encodings...
+encodings_matrix = torch.tensor([[1.16, 0.23], [0.57, 1.36], [4.41, -2.16]])
+
+## set the seed for the random number generator
+torch.manual_seed(42)
+
+## create a basic self-attention ojbect
+selfAttention = SelfAttention(d_model=2, row_dim=0, col_dim=1)
+
+## calculate basic attention for the token encodings
+selfAttention(encodings_matrix)
+
+# %% Verify Calculations
+## print out the weight matrix that creates the queries
+selfAttention.W_q.weight.transpose(0, 1)
+
+## print out the weight matrix that creates the keys
+selfAttention.W_k.weight.transpose(0, 1)
+
+## print out the weight matrix that creates the values
+selfAttention.W_v.weight.transpose(0, 1)
+
+## calculate the queries
+selfAttention.W_q(encodings_matrix)
+
+## calculate the keys
+selfAttention.W_k(encodings_matrix)
+
+## calculate the values
+selfAttention.W_v(encodings_matrix)
+
+q = selfAttention.W_q(encodings_matrix)
+q
+
+k = selfAttention.W_k(encodings_matrix)
+k
+
+sims = torch.matmul(q, k.transpose(dim0=0, dim1=1))
+sims
+
+scaled_sims = sims / (torch.tensor(2) ** 0.5)
+scaled_sims
+
+attention_percents = F.softmax(scaled_sims, dim=1)
+attention_percents
+
+torch.matmul(attention_percents, selfAttention.W_v(encodings_matrix))
+
+# %%
