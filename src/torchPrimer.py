@@ -779,4 +779,104 @@ attention_percents
 
 torch.matmul(attention_percents, selfAttention.W_v(encodings_matrix))
 
+
+# %% Masked Self-Attention
+class MaskedSelfAttention(nn.Module):
+    def __init__(self, d_model=2, row_dim=0, col_dim=1):
+        super().__init__()
+
+        self.W_q = nn.Linear(in_features=d_model, out_features=d_model, bias=False)
+        self.W_k = nn.Linear(in_features=d_model, out_features=d_model, bias=False)
+        self.W_v = nn.Linear(in_features=d_model, out_features=d_model, bias=False)
+
+        self.row_dim = row_dim
+        self.col_dim = col_dim
+
+    def forward(self, token_encodings, mask=None):
+        q = self.W_q(token_encodings)
+        k = self.W_k(token_encodings)
+        v = self.W_v(token_encodings)
+
+        # Compute similarity scores: (q * k^T)
+        sims = torch.matmul(q, k.transpose(dim0=self.row_dim, dim1=self.col_dim))
+
+        # Scalre the similarities by dividing by the square root of the dimension of the key vectors
+        scaled_sims = sims / torch.tensor(k.size(self.col_dim) ** 0.5)
+
+        if mask is not None:
+            ## Here we are masking out things we don't want to pay attention to
+            ##
+            ## We replace values we wanted masked out
+            ## with a very small negative number so that the SoftMax() function
+            ## will give all masked elements an output value (or "probability") of 0.
+            scaled_sims = scaled_sims.masked_fill(mask=mask, value=-1e9)
+
+        # Apply softmax to the similarity scores to determine what percent of each tokens value to use in final attention values.
+        attention_percents = F.softmax(scaled_sims, dim=self.col_dim)
+
+        # Scale the values by their associated percentages and add them up
+        attention_scores = torch.matmul(attention_percents, v)
+
+        return attention_scores
+
+
+# %% Calculate Masked Self-Attention and Verify Calculations
+## create a matrix of token encodings...
+encodings_matrix = torch.tensor([[1.16, 0.23], [0.57, 1.36], [4.41, -2.16]])
+
+## set the seed for the random number generator
+torch.manual_seed(42)
+
+## create a masked self-attention object
+maskedSelfAttention = MaskedSelfAttention(d_model=2, row_dim=0, col_dim=1)
+
+## create the mask so that we don't use
+## tokens that come after a token of interest
+mask = torch.tril(torch.ones(3, 3))
+mask = mask == 0
+mask  # print out the mask
+
+## calculate masked self-attention
+maskedSelfAttention(encodings_matrix, mask)
+
+## print out the weight matrix that creates the queries
+maskedSelfAttention.W_q.weight.transpose(0, 1)
+
+## print out the weight matrix that creates the queries
+maskedSelfAttention.W_q.weight.transpose(0, 1)
+
+## print out the weight matrix that creates the keys
+maskedSelfAttention.W_k.weight.transpose(0, 1)
+
+## print out the weight matrix that creates the values
+maskedSelfAttention.W_v.weight.transpose(0, 1)
+
+## calculate the queries
+maskedSelfAttention.W_q(encodings_matrix)
+
+## calculate the keys
+maskedSelfAttention.W_k(encodings_matrix)
+
+## calculate the values
+maskedSelfAttention.W_v(encodings_matrix)
+
+q = maskedSelfAttention.W_q(encodings_matrix)
+q
+
+k = maskedSelfAttention.W_k(encodings_matrix)
+k
+
+sims = torch.matmul(q, k.transpose(dim0=0, dim1=1))
+sims
+
+scaled_sims = sims / (torch.tensor(2) ** 0.5)
+scaled_sims
+
+masked_scaled_sims = scaled_sims.masked_fill(mask=mask, value=-1e9)
+masked_scaled_sims
+
+attention_percents = F.softmax(masked_scaled_sims, dim=1)
+attention_percents
+
+torch.matmul(attention_percents, maskedSelfAttention.W_v(encodings_matrix))
 # %%
