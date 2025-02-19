@@ -28,7 +28,7 @@ from brax.training.agents.ppo import train as ppo
 # from etils import epath
 # from flax import struct
 # from flax.training import orbax_utils
-from IPython.display import HTML, clear_output
+from IPython.display import clear_output
 import jax
 from jax import numpy as jp
 
