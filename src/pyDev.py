@@ -247,7 +247,7 @@ ax.set_zlabel("z")
 plt.title("Lorenz Attractor")
 plt.show()
 
-# %% HAVOK Code for Lorenz System
+# %% HAVOK (Hankel Alternaltive View of Koopman) Code for Lorenz System
 
 ## Eigen-time delay coordinates
 stackmax = 10  # Number of shift-stacked rows, q from equation (7.107)
