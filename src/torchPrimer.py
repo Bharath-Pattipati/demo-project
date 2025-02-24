@@ -17,14 +17,15 @@ import torch.nn.functional as F
 
 
 # %% Basic
-"""x = torch.rand(5, 3)
-print(x)"""
+""" x = torch.rand(5, 3)
+print(x)
 
-""" x = [[5, 3], [0, 9]]
+
+x = [[5, 3], [0, 9]]
 y = torch.tensor(x)
-print(y) """
+print(y)
 
-""" # random numbers from uniform distribution on interval [0, 1)
+# random numbers from uniform distribution on interval [0, 1)
 x = torch.rand(4, 4)
 y = torch.rand(4, 4)
 print(x)
@@ -37,7 +38,7 @@ print(z)
 z = torch.stack([x, y], dim=2)
 print(z)
 
-print(z[3,3,0]) """
+print(z[3, 3, 0]) """
 
 # %% Andrej Karpathy Tutorial
 # The spelled-out intro to neural networks and backpropagation: building micrograds
