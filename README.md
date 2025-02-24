@@ -21,7 +21,7 @@
 
 <br>
 
-### Libraries
+### PIML Libraries
 Open-source libraries developed for data-driven dynamical systems:
 
 [1] [PyDMD](https://github.com/mathLab/PyDMD), Python package designed for Dynamic Mode Decomposition (DMD).
@@ -45,6 +45,16 @@ Open-source libraries developed for data-driven dynamical systems:
 [10] SLICOT Optimization libraries. P. Benner, V. Mehrmann, V. Sima, S. Van Huffel, and A. Varga. Slicot - a subroutine library in systems and control theory. Applied Computational Control, Signals, and Circuits, Springer, 1999.
 
 [11] [Gymnasium](https://github.com/Farama-Foundation/Gymnasium): A Standard Interface for Reinforcement Learning Environments. [Documentation](https://gymnasium.farama.org/)
+
+[12] [NIVDIA-MODULUS](https://github.com/NVIDIA/modulus#who-is-using-and-contributing-to-modulus), Open-source deep-learning framework for building, training, and fine-tuning deep learning models using state-of-the-art Physics-ML methods.
+
+### Symbolic Regression Libraries & Tutorials
+[1] Prof. Miles Cranmer, [PySR](https://github.com/MilesCranmer/PySR), High-Performance Symbolic Regression in Python and Julia.
+
+[2] Prof. Miles Cranmer, [Astro Automata](https://astroautomata.com/), University of Cambridge.
+
+
+
 
 
 --------
