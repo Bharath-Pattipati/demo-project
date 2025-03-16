@@ -20,6 +20,8 @@ import matplotlib.pyplot as plt
 
 
 # %% Create a sampling layer
+# Randomly sample points from latent normal distribution to generate data with z = z_mean + exp(z_log_var) * epsilon.
+# Decoder network maps latent space points back to original input space.
 class Sampling(layers.Layer):
     """Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
 
@@ -31,11 +33,15 @@ class Sampling(layers.Layer):
         z_mean, z_log_var = inputs
         batch = ops.shape(z_mean)[0]
         dim = ops.shape(z_mean)[1]
-        epsilon = keras.random.normal(shape=(batch, dim), seed=self.seed_generator)
+        epsilon = keras.random.normal(
+            shape=(batch, dim), seed=self.seed_generator
+        )  # random normal tensor
         return z_mean + ops.exp(0.5 * z_log_var) * epsilon
 
 
 # %% Build the Encoder
+# Encoder network turns input samples into 2 parameters in latent space
+# (mean and log variance of the latent distribution)
 latent_dim = 2
 
 encoder_inputs = keras.Input(shape=(28, 28, 1))
@@ -90,7 +96,9 @@ class VAE(keras.Model):
                     axis=(1, 2),
                 )
             )
-            kl_loss = -0.5 * (1 + z_log_var - ops.square(z_mean) - ops.exp(z_log_var))
+            kl_loss = -0.5 * (
+                1 + z_log_var - ops.square(z_mean) - ops.exp(z_log_var)
+            )  # KL divergence regularization term
             kl_loss = ops.mean(ops.sum(kl_loss, axis=1))
             total_loss = reconstruction_loss + kl_loss
         grads = tape.gradient(total_loss, self.trainable_weights)
@@ -108,7 +116,9 @@ class VAE(keras.Model):
 # %% Train the VAE
 (x_train, _), (x_test, _) = keras.datasets.mnist.load_data()
 mnist_digits = np.concatenate([x_train, x_test], axis=0)
-mnist_digits = np.expand_dims(mnist_digits, -1).astype("float32") / 255
+mnist_digits = (
+    np.expand_dims(mnist_digits, -1).astype("float32") / 255
+)  # normalize pixel values between [0, 1]
 
 vae = VAE(encoder, decoder)
 vae.compile(optimizer=keras.optimizers.Adam())
