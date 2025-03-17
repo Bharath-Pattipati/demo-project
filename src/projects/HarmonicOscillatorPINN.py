@@ -126,8 +126,8 @@ def plot_result(x, y, x_data, y_data, yh, xp=None):
             alpha=0.4,
             label="Physics loss training locations",
         )
-    l = plt.legend(loc=(1.01, 0.34), frameon=False, fontsize="large")
-    plt.setp(l.get_texts(), color="k")
+    legend = plt.legend(loc=(1.01, 0.34), frameon=False, fontsize="large")
+    plt.setp(legend.get_texts(), color="k")
     plt.xlim(-0.05, 1.05)
     plt.ylim(-1.1, 1.1)
     plt.text(1.065, 0.7, "Training step: %i" % (i + 1), fontsize="xx-large", color="k")
