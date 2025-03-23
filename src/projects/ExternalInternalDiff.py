@@ -305,7 +305,7 @@ if __name__ == "__main__":
     yNom = explore_initial_conditions(X, tol)  # Solution at Nominal Points """
 
     # Perturbations. External Differentiation. Loop around numerical integration of ODE.
-    yPert = np.zeros((2, len(X)))
+    """     yPert = np.zeros((2, len(X)))
     G_tF = np.zeros(
         (2, len(X))
     )  # Computing derivative of ODE solution w.r.t variables x
@@ -313,10 +313,10 @@ if __name__ == "__main__":
         delta = 10 ** (-3) * X[k]
         xBar = X[k] + delta
         yPert[:, k] = explore_initial_conditions(np.array([xBar]), tol).squeeze()
-        G_tF[:, k] = (yPert[:, k] - yNom[:, k]) / delta
+        G_tF[:, k] = (yPert[:, k] - yNom[:, k]) / delta """
 
     # Plotting
-    plt.figure(figsize=(10, 8))
+    """     plt.figure(figsize=(10, 8))
     plt.plot(X, G_tF[0], linewidth=1, label="dx/dt")
     plt.plot(X, G_tF[1], linewidth=1, label="dy/dt")
     plt.xlabel("Y2 Initial Condition")
@@ -324,7 +324,7 @@ if __name__ == "__main__":
     plt.title("External Derivatives (1e-4)")
     plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.show() """
 
     # Internal Differentiation. Augmented system of ODEs.
     X = np.arange(2.90, 3.1, 0.01)
