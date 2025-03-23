@@ -300,9 +300,9 @@ if __name__ == "__main__":
     # plt.show()
 
     # To explore different initial conditions
-    X = np.arange(2.90, 3.1, 0.01)
+"""     X = np.arange(2.90, 3.1, 0.01)
     tol = 1e-4
-    yNom = explore_initial_conditions(X, tol)  # Solution at Nominal Points
+    yNom = explore_initial_conditions(X, tol)  # Solution at Nominal Points """
 
     # Perturbations. External Differentiation. Loop around numerical integration of ODE.
     yPert = np.zeros((2, len(X)))
