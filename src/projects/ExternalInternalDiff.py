@@ -30,6 +30,39 @@ def brusselator(t, y, a, b):
     return [dx_dt, dy_dt]
 
 
+# %% Augmented Brusselator Problem: Vectorized implementation
+def augmented_brusselator(t, y, a, b):
+    """
+    Augmented Brusselator ODE system:
+    Includes the original system and n copies of the same dynamics.
+
+    Parameters:
+        t: time
+        y: state vector [x, y, x1, y1, ..., xn, yn]
+        a, b: model parameters
+        n: number of augmented copies
+    """
+    # Original state variables
+    x, y_main = y[0], y[1]
+
+    # Original system dynamics
+    dx_dt = a + x**2 * y_main - (b + 1) * x
+    dy_dt = b * x - x**2 * y_main
+
+    # Augmented states (all copies)
+    x_aug = y[2::2]  # Extract all x_aug (every 2nd element starting from index 2)
+    y_aug = y[3::2]  # Extract all y_aug (every 2nd element starting from index 3)
+
+    # Vectorized dynamics for augmented states
+    dx_aug_dt = a + x_aug**2 * y_aug - (b + 1) * x_aug
+    dy_aug_dt = b * x_aug - x_aug**2 * y_aug
+
+    # Combine all derivatives into a single array
+    dydt = [dx_dt, dy_dt] + np.ravel(np.column_stack((dx_aug_dt, dy_aug_dt))).tolist()
+
+    return dydt
+
+
 # %% Integrate ODE using Eighth-Order Dormand-Prince Runge-Kutta Method (DOP853)
 # Set parameters
 a = 1.0
@@ -186,11 +219,11 @@ def explore_initial_conditions(X=None, tol=1e-8):
     plt.figure(figsize=(10, 8))
 
     for i, y2 in enumerate(X):
-        y0_test = [y1_fixed, y2]
+        yInit = [y1_fixed, y2]
         sol = solve_ivp(
             fun=lambda t, y: brusselator(t, y, a, b),
             t_span=t_span,
-            y0=y0_test,
+            y0=yInit,
             method="DOP853",
             rtol=tol,
             atol=tol,
@@ -207,6 +240,47 @@ def explore_initial_conditions(X=None, tol=1e-8):
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title("Multiple Initial Conditions for Brusselator")
+    plt.grid(True)
+    plt.show()
+
+    return ySol
+
+
+# %% Vectorized function to explore different initial conditions
+def explore_initial_conditions_vec(X=None, tol=1e-8):
+    # Solve the augmented system
+    solution_aug = solve_ivp(
+        fun=lambda t, y: augmented_brusselator(t, y, a, b),
+        t_span=t_span,
+        y0=X,
+        method="DOP853",
+        rtol=tol,
+        atol=tol,
+        dense_output=True,
+    )
+
+    # Extract the original and augmented solutions
+    t_dense = np.linspace(t_span[0], t_span[1], 1000)
+    y_dense_aug = solution_aug.sol(t_dense)
+    ySol = y_dense_aug[:, -1]  # store the last point of the solution
+
+    # Plot the augmented results
+    plt.figure(figsize=(12, 6))
+    plt.plot(t_dense, y_dense_aug[0])
+    plt.plot(t_dense, y_dense_aug[1])
+
+    for i in range(nx - 1):
+        plt.plot(
+            t_dense, y_dense_aug[2 + 2 * i], label=f"x (Copy {i + 1})", linestyle="--"
+        )
+        plt.plot(
+            t_dense, y_dense_aug[3 + 2 * i], label=f"y (Copy {i + 1})", linestyle="--"
+        )
+
+    plt.xlabel("Time")
+    plt.ylabel("States")
+    plt.title("Augmented System Dynamics (Vectorized)")
+    plt.legend(labels=["x (Original)", "y (Original)"], loc="upper left")
     plt.grid(True)
     plt.show()
 
@@ -230,7 +304,7 @@ if __name__ == "__main__":
     tol = 1e-4
     yNom = explore_initial_conditions(X, tol)  # Solution at Nominal Points
 
-    # Perturbations
+    # Perturbations. External Differentiation. Loop around numerical integration of ODE.
     yPert = np.zeros((2, len(X)))
     G_tF = np.zeros(
         (2, len(X))
@@ -252,5 +326,31 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.show()
 
+    # Internal Differentiation. Augmented system of ODEs.
+    X = np.arange(2.90, 3.1, 0.01)
+    delta = 10 ** (-3) * X  # perturbation
+    Xpert = X + delta
+    nx = len(X)
+    y1_fixed = [1.5] * nx
+    yI = np.ravel(np.column_stack((y1_fixed, X)))  # Augmented initial conditions
+    yPert = np.ravel(np.column_stack((y1_fixed, Xpert)))  # Augmented initial conditions
+
+    yNomSol = explore_initial_conditions_vec(yI, tol=1e-4)
+    yPertSol = explore_initial_conditions_vec(yPert, tol=1e-4)
+"""     print(yPertSol.shape)
+    print(yNomSol.shape)
+    den = [delta] * 2
+    print(den.shape)
+    G_vec = (yPertSol - yNomSol) / den
+
+    plt.figure(figsize=(10, 8))
+    plt.plot(X, G_vec[0], linewidth=1, label="dx/dt")
+    plt.plot(X, G_vec[1], linewidth=1, label="dy/dt")
+    plt.xlabel("Y2 Initial Condition")
+    plt.ylabel("Gradient")
+    plt.title("Internal Derivatives (1e-4)")
+    plt.legend()
+    plt.grid(True)
+    plt.show() """
 
 # %%
