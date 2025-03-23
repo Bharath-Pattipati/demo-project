@@ -173,30 +173,33 @@ def analyze_brusselator_stability(a_range, b_range):
 
 
 # %% Function to explore different initial conditions
-def explore_initial_conditions():
+def explore_initial_conditions(X=None, tol=1e-8):
     """
     Integrate the system with various initial conditions to visualize
     the basin of attraction for the limit cycle.
     """
-    y2_values = np.arange(2.90, 3.1, 0.01)
-    y1_fixed = 1.5
 
+    nx = len(X)
+    y1_fixed = 1.5
+    nt = 1000
+    ySol = np.zeros((2, nx))  # initialize array to store solutions
     plt.figure(figsize=(10, 8))
 
-    for y2 in y2_values:
+    for i, y2 in enumerate(X):
         y0_test = [y1_fixed, y2]
         sol = solve_ivp(
             fun=lambda t, y: brusselator(t, y, a, b),
             t_span=t_span,
             y0=y0_test,
             method="DOP853",
-            rtol=1e-8,
-            atol=1e-10,
+            rtol=tol,
+            atol=tol,
             dense_output=True,
         )
 
-        t_test = np.linspace(t_span[0], t_span[1], 500)
+        t_test = np.linspace(t_span[0], t_span[1], nt)
         y_test = sol.sol(t_test)
+        ySol[:, i] = y_test[:, -1]  # store the last point of the solution
 
         plt.plot(y_test[0], y_test[1], "-", linewidth=1, alpha=0.7)
         plt.plot(y_test[0][0], y_test[1][0], "o", markersize=4)
@@ -207,6 +210,8 @@ def explore_initial_conditions():
     plt.grid(True)
     plt.show()
 
+    return ySol
+
 
 # %% Usage examples:
 if __name__ == "__main__":
@@ -214,11 +219,38 @@ if __name__ == "__main__":
     # plt.show() is already included in the plotting code
 
     # To run stability analysis
-    analyze_brusselator_stability((0, 2), (0, 5))
-
-    # To explore different initial conditions
-    explore_initial_conditions()
+    # analyze_brusselator_stability((0, 2), (0, 5))
 
     # To run the animation
-    ani, fig = create_animation()
+    # ani, fig = create_animation()
+    # plt.show()
+
+    # To explore different initial conditions
+    X = np.arange(2.90, 3.1, 0.01)
+    tol = 1e-4
+    yNom = explore_initial_conditions(X, tol)  # Solution at Nominal Points
+
+    # Perturbations
+    yPert = np.zeros((2, len(X)))
+    G_tF = np.zeros(
+        (2, len(X))
+    )  # Computing derivative of ODE solution w.r.t variables x
+    for k in range(1, len(X)):
+        delta = 10 ** (-3) * X[k]
+        xBar = X[k] + delta
+        yPert[:, k] = explore_initial_conditions(np.array([xBar]), tol).squeeze()
+        G_tF[:, k] = (yPert[:, k] - yNom[:, k]) / delta
+
+    # Plotting
+    plt.figure(figsize=(10, 8))
+    plt.plot(X, G_tF[0], linewidth=1, label="dx/dt")
+    plt.plot(X, G_tF[1], linewidth=1, label="dy/dt")
+    plt.xlabel("Y2 Initial Condition")
+    plt.ylabel("Gradient")
+    plt.title("External Derivatives (1e-4)")
+    plt.legend()
+    plt.grid(True)
     plt.show()
+
+
+# %%
