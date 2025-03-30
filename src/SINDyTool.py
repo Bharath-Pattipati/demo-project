@@ -26,7 +26,7 @@ from pysindy.utils import lorenz_control
 import numpy as np
 # from scipy.io import loadmat
 
-# import pandas as pd
+import pandas as pd
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
@@ -279,14 +279,14 @@ def plot_u_and_u_dot(t, x, u):
 
 
 # %% Basic Example
-"""
-Dynamical system:
+
+""" Dynamical system:
     x' = -2x
     y' = y
 Solution:
     x(t) = x(0) * exp(-2t)
-    y(t) = y(0) * exp(t)
-"""
+    y(t) = y(0) * exp(t) """
+
 """ # Construct data matrix: solutions of ODEs
 t = np.linspace(0, 1, 100)
 x_0 = 3
@@ -303,8 +303,7 @@ model.fit(X, t=t)
 model.print() """
 
 # %% Lorenz System
-
-""" # Generate measurement data
+# Generate measurement data
 dt = 0.002
 
 t_train = np.arange(0, t_end_train, dt)
@@ -340,7 +339,7 @@ x_test = solve_ivp(
 ).y.T
 
 # Compare SINDy-predicted derivatives with finite difference derivatives
-print("Model score: %f" % model.score(x_test, t=dt)) """
+print("Model score: %f" % model.score(x_test, t=dt))
 
 # %% Test weak form ODE functionality on Lorenz equation
 """ # Generate measurement data
