@@ -45,6 +45,391 @@ class VehicleModel:
         raise NotImplementedError("Subclasses must implement this method.")
 
 
+# %% Nonlinear Dual Track Bicycle Model Class
+class NonlinearDualTrackBicycleModel(VehicleModel):
+    """
+    Dual track nonlinear bicycle model based on the provided equations.
+    Implements the full vehicle dynamics with tire slip angles and forces.
+    """
+
+    def __init__(self, params=None):
+        """
+        Initialize the dual track bicycle model with default parameters.
+
+        Args:
+            params (dict, optional): Dictionary of vehicle parameters
+        """
+        default_params = {
+            # Vehicle parameters
+            "m": 1500.0,  # Vehicle mass (kg)
+            "Iz": 3000.0,  # Yaw moment of inertia (kg.m^2)
+            "lf": 1.2,  # Distance from CG to front axle (m)
+            "lr": 1.6,  # Distance from CG to rear axle (m)
+            "cf": 1.8,  # Front track width (m)
+            "cr": 1.8,  # Rear track width (m)
+            # Tire parameters
+            "Cf": 80000.0,  # Front cornering stiffness (N/rad)
+            "Cr": 80000.0,  # Rear cornering stiffness (N/rad)
+            "mu": 0.85,  # Road friction coefficient
+            # Pacejka Magic Formula parameters
+            "B": 5.0,  # Stiffness factor
+            "C": 1.9,  # Shape factor
+            "D": 1.0,  # Peak value (will be multiplied by mu*Fz)
+            "E": 0.97,  # Curvature factor
+            # Physical constants
+            "g": 9.81,  # Gravitational acceleration (m/s^2)
+            # Aerodynamic parameters
+            "Cd": 0.3,  # Drag coefficient
+            "A": 2.5,  # Frontal area (m^2)
+            "rho": 1.225,  # Air density (kg/m^3)
+            # Rolling resistance
+            "Crr": 0.01,  # Rolling resistance coefficient
+        }
+
+        if params is not None:
+            default_params.update(params)
+
+        super().__init__(default_params)
+
+    def calculate_tire_slip_angles(self, vx, vy, r, delta_f, delta_r=0.0):
+        """
+        Calculate tire slip angles for all four wheels.
+
+        Args:
+            vx (float): Longitudinal velocity (m/s)
+            vy (float): Lateral velocity (m/s)
+            r (float): Yaw rate (rad/s)
+            delta_f (float): Front steering angle (rad)
+            delta_r (float): Rear steering angle (rad)
+
+        Returns:
+            tuple: (alpha_fr, alpha_fl, alpha_rr, alpha_rl) - slip angles for each wheel
+        """
+        lf = self.params["lf"]
+        lr = self.params["lr"]
+
+        # Avoid division by zero
+        vx_safe = max(abs(vx), 0.1) * np.sign(vx) if abs(vx) > 0.01 else 0.1
+
+        # Velocity components at each wheel
+        # Front wheels
+        vy_f = vy + lf * r
+
+        # Rear wheels
+        vy_r = vy - lr * r
+
+        # Slip angles (equation 6 from the document)
+        alpha_fr = delta_f - np.arctan2(vy_f, vx_safe)  # Front right
+        alpha_fl = delta_f - np.arctan2(vy_f, vx_safe)  # Front left
+        alpha_rr = delta_r - np.arctan2(vy_r, vx_safe)  # Rear right
+        alpha_rl = delta_r - np.arctan2(vy_r, vx_safe)  # Rear left
+
+        return alpha_fr, alpha_fl, alpha_rr, alpha_rl
+
+    def calculate_normal_forces(self, ax, ay):
+        """
+        Calculate normal forces at each wheel considering load transfer.
+
+        Args:
+            ax (float): Longitudinal acceleration (m/s^2)
+            ay (float): Lateral acceleration (m/s^2)
+
+        Returns:
+            tuple: (Fz_fr, Fz_fl, Fz_rr, Fz_rl) - normal forces
+        """
+        m = self.params["m"]
+        g = self.params["g"]
+        lf = self.params["lf"]
+        lr = self.params["lr"]
+        cf = self.params["cf"]
+        cr = self.params["cr"]
+        h = 0.5  # Height of CG (assumed)
+        Fz_lb = 1000
+
+        # Static weight distribution
+        Fz_f_static = m * g * lr / (lf + lr)  # Front axle
+        Fz_r_static = m * g * lf / (lf + lr)  # Rear axle
+
+        # Longitudinal load transfer
+        dFz_long = m * h * ax / (lf + lr)
+
+        # Lateral load transfer (simplified)
+        dFz_lat_f = m * h * ay / cf
+        dFz_lat_r = m * h * ay / cr
+
+        # Normal forces at each wheel
+        Fz_fr = Fz_f_static / 2 - dFz_long / 2 - dFz_lat_f / 2
+        Fz_fl = Fz_f_static / 2 - dFz_long / 2 + dFz_lat_f / 2
+        Fz_rr = Fz_r_static / 2 + dFz_long / 2 - dFz_lat_r / 2
+        Fz_rl = Fz_r_static / 2 + dFz_long / 2 + dFz_lat_r / 2
+
+        # Ensure positive normal forces
+        Fz_fr = max(Fz_fr, Fz_lb)
+        Fz_fl = max(Fz_fl, Fz_lb)
+        Fz_rr = max(Fz_rr, Fz_lb)
+        Fz_rl = max(Fz_rl, Fz_lb)
+
+        return Fz_fr, Fz_fl, Fz_rr, Fz_rl
+
+    def calculate_tire_force_magic_formula(self, alpha, Fz, mu_peak):
+        """
+        Calculate lateral tire force using Pacejka Magic Formula.
+
+        Args:
+            alpha (float): Slip angle (rad)
+            Fz (float): Normal force (N)
+            mu_peak (float): Peak friction coefficient
+
+        Returns:
+            float: Lateral tire force (N)
+        """
+        # Pacejka Magic Formula parameters
+        B = self.params["B"]  # Stiffness factor
+        C = self.params["C"]  # Shape factor
+        D = self.params["D"] * mu_peak * Fz  # Peak value
+        E = self.params["E"]  # Curvature factor
+
+        # Magic Formula (equation 5 from document)
+        # Fy = D * sin(C * arctan(B * alpha - E * (B * alpha - arctan(B * alpha))))
+        B_alpha = B * alpha
+        arctan_B_alpha = np.arctan(B_alpha)
+
+        Fy = D * np.sin(C * np.arctan(B_alpha - E * (B_alpha - arctan_B_alpha)))
+
+        return Fy
+
+    def calculate_longitudinal_force_magic_formula(self, kappa, Fz, mu_peak):
+        """
+        Calculate longitudinal tire force using Pacejka Magic Formula.
+
+        Args:
+            kappa (float): Slip ratio (-)
+            Fz (float): Normal force (N)
+            mu_peak (float): Peak friction coefficient
+
+        Returns:
+            float: Longitudinal tire force (N)
+        """
+        # Pacejka Magic Formula parameters (similar to lateral)
+        B = self.params["B"]  # Stiffness factor
+        C = self.params["C"]  # Shape factor
+        D = self.params["D"] * mu_peak * Fz  # Peak value
+        E = self.params["E"]  # Curvature factor
+
+        # Magic Formula for longitudinal force
+        B_kappa = B * kappa
+        arctan_B_kappa = np.arctan(B_kappa)
+
+        Fx = D * np.sin(C * np.arctan(B_kappa - E * (B_kappa - arctan_B_kappa)))
+
+        return Fx
+
+    def state_derivatives(self, t, state, inputs=None):
+        """
+        Calculate the derivatives of the state variables.
+
+        State vector: [vx, vy, r, x, y, psi]
+            vx: longitudinal velocity (m/s)
+            vy: lateral velocity (m/s)
+            r: yaw rate (rad/s)
+            x: global x position (m)
+            y: global y position (m)
+            psi: yaw angle (rad)
+
+        Args:
+            t (float): Time
+            state (np.ndarray): State vector
+            inputs (dict): Input dictionary with keys:
+                - 'deltaF': front steering angle (rad)
+                - 'deltaR': rear steering angle for RWS (rad) - manipulated control variable
+                - 'Fx_demand': demanded longitudinal force (N)
+                - 'Mz': torque vectoring yaw moment (N⋅m) - manipulated control variable
+
+        Returns:
+            np.ndarray: Derivatives of state vector
+        """
+        if len(state) == 3:
+            vx, vy, r = state
+            x, y, psi = 0, 0, 0
+            include_position = False
+        else:
+            vx, vy, r, x, y, psi = state
+            include_position = True
+
+        # Default inputs
+        if inputs is None:
+            inputs = {}
+
+        deltaF = inputs.get("deltaF", 0.0)  # Front steering angle (driver input)
+        deltaR = inputs.get("deltaR", 0.0)  # Rear steering angle (RWS control variable)
+        Fx_demand = inputs.get("Fx_demand", 0.0)  # Longitudinal force demand
+        Mz_TV = inputs.get(
+            "Mz", 0.0
+        )  # Torque vectoring yaw moment (TV control variable)
+
+        # Vehicle parameters
+        m = self.params["m"]
+        Iz = self.params["Iz"]
+        lf = self.params["lf"]
+        lr = self.params["lr"]
+
+        # Current accelerations (for load transfer calculation)
+        ax = 0.0  # Will be updated iteratively in a real implementation
+        ay = 0.0
+
+        # Calculate normal forces
+        Fz_wheels = self.calculate_normal_forces(ax, ay)
+        Fz_fr, Fz_fl, Fz_rr, Fz_rl = Fz_wheels
+
+        # Calculate slip angles for all four wheels
+        alpha_fr, alpha_fl, alpha_rr, alpha_rl = self.calculate_tire_slip_angles(
+            vx, vy, r, deltaF, deltaR
+        )
+
+        # Calculate lateral tire forces using Magic Formula
+        mu = self.params["mu"]
+        Fy_fr = self.calculate_tire_force_magic_formula(alpha_fr, Fz_fr, mu)
+        Fy_fl = self.calculate_tire_force_magic_formula(alpha_fl, Fz_fl, mu)
+        Fy_rr = self.calculate_tire_force_magic_formula(alpha_rr, Fz_rr, mu)
+        Fy_rl = self.calculate_tire_force_magic_formula(alpha_rl, Fz_rl, mu)
+
+        # Calculate longitudinal slip ratios (simplified)
+        # For simplicity, assume no wheel slip initially for front wheels
+        kappa_fr = 0.0
+        kappa_fl = 0.0
+
+        # For driven rear wheels, calculate slip based on demanded force
+        if abs(Fx_demand) > 0.1 and abs(vx) > 0.1:
+            # Estimate slip ratio based on force demand and tire characteristics
+            max_force_per_wheel = mu * max(Fz_rr, Fz_rl)
+            if max_force_per_wheel > 0:
+                kappa_rr = np.clip(
+                    Fx_demand / (2 * max_force_per_wheel) * 0.1, -0.3, 0.3
+                )
+                kappa_rl = kappa_rr
+            else:
+                kappa_rr = 0.0
+                kappa_rl = 0.0
+        else:
+            kappa_rr = 0.0
+            kappa_rl = 0.0
+
+        # Calculate longitudinal forces using Magic Formula
+        Fx_fr = self.calculate_longitudinal_force_magic_formula(kappa_fr, Fz_fr, mu)
+        Fx_fl = self.calculate_longitudinal_force_magic_formula(kappa_fl, Fz_fl, mu)
+        Fx_rr = self.calculate_longitudinal_force_magic_formula(kappa_rr, Fz_rr, mu)
+        Fx_rl = self.calculate_longitudinal_force_magic_formula(kappa_rl, Fz_rl, mu)
+
+        # Apply force demand distribution (for rear-wheel drive)
+        if abs(Fx_demand) > 0.1:
+            # Distribute demanded force equally between rear wheels as baseline
+            Fx_rr_base = Fx_demand / 2
+            Fx_rl_base = Fx_demand / 2
+
+            # Add the Magic Formula forces to the demanded forces
+            Fx_rr += Fx_rr_base
+            Fx_rl += Fx_rl_base
+
+        # Apply torque vectoring through differential longitudinal forces
+        # TV creates left-right force imbalance to generate additional yaw moment
+        if abs(Mz_TV) > 0.01:
+            # Calculate additional forces needed for torque vectoring
+            # Distribute TV moment between front and rear axles
+            deltaFx_TV_front = (
+                Mz_TV / self.params["cf"]
+            )  # Front axle TV force difference
+            deltaFx_TV_rear = Mz_TV / self.params["cr"]  # Rear axle TV force difference
+
+            # Apply TV forces (positive Mz creates right turn moment)
+            # Right wheels get additional positive force, left wheels get negative
+            Fx_fr += deltaFx_TV_front / 2
+            Fx_fl -= deltaFx_TV_front / 2
+            Fx_rr += deltaFx_TV_rear / 2
+            Fx_rl -= deltaFx_TV_rear / 2
+
+        # Sum forces (equations 4 from the document)
+        Fx_total = Fx_fr + Fx_fl + Fx_rr + Fx_rl
+        Fy_total = Fy_fr + Fy_fl + Fy_rr + Fy_rl
+
+        # Aerodynamic drag
+        Fx_aero = (
+            -0.5
+            * self.params["rho"]
+            * self.params["Cd"]
+            * self.params["A"]
+            * vx
+            * abs(vx)
+        )
+
+        # Rolling resistance
+        Fx_roll = -self.params["Crr"] * m * self.params["g"] * np.sign(vx)
+
+        # Total longitudinal force
+        Fx_net = Fx_total + Fx_aero + Fx_roll
+
+        # Yaw moment calculation (equation 1 from document)
+        # The TV moment Mz_TV is already applied through differential wheel forces
+        # Additional yaw moment from tire forces and geometry
+        Mz_tires = (
+            lf * (Fy_fr + Fy_fl)  # Front lateral forces contribution
+            - lr * (Fy_rr + Fy_rl)  # Rear lateral forces contribution
+            + self.params["cf"]
+            / 2
+            * (Fx_fr - Fx_fl)  # Front longitudinal force difference
+            + self.params["cr"]
+            / 2
+            * (Fx_rr - Fx_rl)  # Rear longitudinal force difference
+        )
+
+        # Total yaw moment (TV moment is already included in wheel force distribution)
+        Mz_total = Mz_tires
+
+        # State derivatives (equations 1 from the document)
+        dvx_dt = Fx_net / m + vy * r
+        dvy_dt = Fy_total / m - vx * r
+        dr_dt = Mz_total / Iz
+
+        if include_position:
+            # Global position derivatives
+            dx_dt = vx * np.cos(psi) - vy * np.sin(psi)
+            dy_dt = vx * np.sin(psi) + vy * np.cos(psi)
+            dpsi_dt = r
+
+            return np.array([dvx_dt, dvy_dt, dr_dt, dx_dt, dy_dt, dpsi_dt])
+        else:
+            return np.array([dvx_dt, dvy_dt, dr_dt])
+
+    def get_state_names(self):
+        """Get the names of state variables."""
+        return ["vx", "vy", "r", "x", "y", "psi"]
+
+    def get_beta(self, vx, vy):
+        """Calculate side slip angle (beta)."""
+        return np.arctan2(vy, vx)
+
+    def get_vehicle_speed(self, vx, vy):
+        """Calculate total vehicle speed."""
+        return np.sqrt(vx**2 + vy**2)
+
+    def get_tire_slip_ratio(self, wheel_speed, vehicle_speed):
+        """Calculate tire longitudinal slip ratio."""
+        if abs(vehicle_speed) < 0.1:
+            return 0.0
+        return (wheel_speed - vehicle_speed) / abs(vehicle_speed)
+
+    def get_tire_slip_angle_deg(self, vx, vy, r, delta=0.0, wheel_position="front"):
+        """Calculate tire slip angle in degrees."""
+        lf = self.params["lf"]
+        lr = self.params["lr"]
+
+        if wheel_position == "front":
+            alpha = delta - np.arctan2((vy + lf * r), max(abs(vx), 0.1))
+        else:  # rear
+            alpha = -np.arctan2((vy - lr * r), max(abs(vx), 0.1))
+
+        return np.degrees(alpha)
+
+
 # %% Dual Track Bicycle Model Class
 class DualTrackBicycleModel(VehicleModel):
     """
@@ -63,9 +448,9 @@ class DualTrackBicycleModel(VehicleModel):
             "Iz": 3000.0,  # Yaw moment of inertia (kg.m^2)
             "lf": 1.2,  # Distance from CG to front axle (m)
             "lr": 1.6,  # Distance from CG to rear axle (m)
-            "Cf": 80000.0,  # Front cornering stiffness (N/rad)
+            "Cf": 60000.0,  # Front cornering stiffness (N/rad)
             "Cr": 80000.0,  # Rear cornering stiffness (N/rad)
-            "mu": 1.0,  # Road friction coefficient
+            "mu": 0.85,  # Road friction coefficient
             "g": 9.81,  # Gravitational acceleration (m/s^2)
             "width": 1.8,  # Vehicle width (m)
         }
@@ -106,7 +491,7 @@ class DualTrackBicycleModel(VehicleModel):
         # For simplicity, assuming constant longitudinal velocity and zero steering input
         # In a real model, these would be inputs or controlled variables
         delta = 0.0  # Steering angle (rad)
-        Fx = 0.0  # Longitudinal force (N)
+        Fx = 5000.0  # Longitudinal force (N)
 
         # Slip angles
         alpha_f = delta - np.arctan2((vy + lf * r), vx) if vx > 0.1 else 0
@@ -1384,29 +1769,57 @@ if __name__ == "__main__":
 
     # Perform comprehensive analysis at a specific speed
     fig = analyzer.comprehensive_analysis(
-        vx=30.0, r_range=(-5.0, 5.0), vy_range=(-20.0, 20.0), grid_size=1000
+        vx=15, r_range=(-20.0, 20.0), vy_range=(-20.0, 20.0), grid_size=100
     )
     plt.show()
 
-"""     fig = analyzer.yaw_acceleration_analysis(
-        (-5.0, 5.0), (-10.0, 10.0), vx=30.0, grid_size=100
+    fig = analyzer.yaw_acceleration_analysis(
+        (-5.0, 5.0), (-10.0, 10.0), vx=15.0, grid_size=100
     )
-    plt.show() """
+    plt.show()
 
-"""     ### Custom Example Usage ###
+    ### Custom Example Usage ###
     # Create custom model with different parameters
-    custom_params = {
-        "m": 2000.0,
-        "Iz": 4000.0,
-        "lf": 1.5,
-        "lr": 1.3,
-        "Cf": 100000.0,
-        "Cr": 120000.0,
-        "mu": 0.8,
-    }
-    custom_model = DualTrackBicycleModel(params=custom_params)
-    custom_analyzer = PhasePortraitAnalyzer(custom_model)
+    # custom_params = {
+    #    "m": 2000.0,
+    #    "Iz": 4000.0,
+    #    "lf": 1.5,
+    #    "lr": 1.3,
+    #    "Cf": 100000.0,
+    #    "Cr": 120000.0,
+    #    "mu": 0.8,
+    # }
+    # custom_model = DualTrackBicycleModel(params=custom_params)
+    # custom_analyzer = PhasePortraitAnalyzer(custom_model)
 
     # Analyze custom model
-    fig = custom_analyzer.comprehensive_analysis(vx=15.0)
-    plt.show() """
+    # fig = custom_analyzer.comprehensive_analysis(vx=15.0)
+    # plt.show()
+
+    # Create model instance
+    # model = NonlinearDualTrackBicycleModel()
+
+    # Test state derivatives
+    # state = np.array([20.0, 0.5, 0.1])  # vx=20 m/s, vy=0.5 m/s, r=0.1 rad/s
+    # inputs = {
+    #    "delta": 0.05,
+    #    "Fx_demand": 1000.0,
+    # }  # 0.05 rad steering, 1000N drive force
+
+    # derivatives = model.state_derivatives(0, state, inputs)
+    # print("State derivatives:", derivatives)
+
+    # Test with full state including position
+    # full_state = np.array([20.0, 0.5, 0.1, 0.0, 0.0, 0.0])
+    # full_derivatives = model.state_derivatives(0, full_state, inputs)
+    # print("Full state derivatives:", full_derivatives)
+
+    # Calculate vehicle parameters
+    # print(f"Side slip angle: {model.get_beta(20.0, 0.5):.3f} rad")
+    # print(f"Vehicle speed: {model.get_vehicle_speed(20.0, 0.5):.3f} m/s")
+    # print(
+    #    f"Front slip angle: {model.get_tire_slip_angle_deg(20.0, 0.5, 0.1, 0.05, 'front'):.2f} deg"
+    # )
+    # print(
+    #    f"Rear slip angle: {model.get_tire_slip_angle_deg(20.0, 0.5, 0.1, 0.0, 'rear'):.2f} deg"
+    # )
