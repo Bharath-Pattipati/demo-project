@@ -160,3 +160,8 @@ After installation, some extensions may require additional setup or a restart of
 
 ### VS Code Productivity Tips
 * [Fireship tutorial](https://www.youtube.com/watch?v=ifTF3ags0XI&ab_channel=Fireship): 25 VS Code Productivity Tips and Speed Hacks
+
+### Latex with VSCode Setup
+* [Downloading MacTex 2025](https://www.tug.org/mactex/mactex-download.html)
+
+* [Fast Guide on Writing LaTeX with LaTeX Workshop in VS Code](https://mathjiajia.github.io/vscode-and-latex/)
