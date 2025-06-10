@@ -1,5 +1,6 @@
 # %% Import necessary libraries
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 # %% Define the enhanced unified bicycle model class
@@ -813,4 +814,296 @@ piecewise_example = {
 if __name__ == "__main__":
     analysis = demonstrate_nonlinear_effects()
 
-# %%
+
+# %% Tire Force Transformation Comparison
+class TireForceTransformation:
+    """
+    Demonstrates different methods for transforming tire forces to vehicle CG.
+    Compares rotation matrix approach vs. direct moment arm calculation.
+    """
+
+    def __init__(self, vehicle_params):
+        self.a = vehicle_params["a"]  # Distance from CG to front axle
+        self.b = vehicle_params["b"]  # Distance from CG to rear axle
+        self.L = self.a + self.b  # Wheelbase
+        self.track_width = vehicle_params.get("track_width", 1.6)  # For 4-wheel model
+
+    def bicycle_model_moment_arms(self, Fyf, Fyr, delta_f=0, delta_r=0):
+        """
+        Current approach in your code: Direct moment arm calculation for bicycle model.
+        This is the standard and most efficient method for bicycle models.
+        """
+        # Lateral force (already aligned with vehicle Y-axis in bicycle model)
+        Fy_total = Fyf + Fyr
+
+        # Yaw moment about CG using moment arms
+        # Positive yaw moment = left turn (counter-clockwise)
+        Mz = self.a * Fyf * np.cos(delta_f) - self.b * Fyr * np.cos(delta_r)
+
+        # Add steering moments if significant
+        if abs(delta_f) > 0.1 or abs(delta_r) > 0.1:
+            # Longitudinal components of steered forces create additional yaw moment
+            Mz += (
+                self.a * Fyf * np.sin(delta_f) * 0
+            )  # Usually negligible for small angles
+
+        return {"Fy_total": Fy_total, "Mz_total": Mz, "method": "moment_arms"}
+
+    def rotation_matrix_approach(self, tire_forces_local, tire_positions, tire_angles):
+        """
+        Rotation matrix approach for transforming tire forces to CG.
+        More general but computationally heavier - useful for 4-wheel models.
+
+        Args:
+            tire_forces_local: [(Fx_tire, Fy_tire), ...] forces in tire coordinate system
+            tire_positions: [(x_tire, y_tire), ...] tire positions relative to CG
+            tire_angles: [delta_1, delta_2, ...] tire steering angles
+        """
+        Fx_total = 0
+        Fy_total = 0
+        Mz_total = 0
+
+        for i, ((Fx_local, Fy_local), (x_tire, y_tire), delta) in enumerate(
+            zip(tire_forces_local, tire_positions, tire_angles)
+        ):
+            # Rotation matrix from tire to vehicle coordinates
+            # Positive delta = left turn (counter-clockwise rotation)
+            cos_delta = np.cos(delta)
+            sin_delta = np.sin(delta)
+
+            R = np.array(
+                [
+                    [cos_delta, -sin_delta],  # Transform to vehicle X (longitudinal)
+                    [sin_delta, cos_delta],  # Transform to vehicle Y (lateral)
+                ]
+            )
+
+            # Transform forces to vehicle coordinate system
+            F_local = np.array([Fx_local, Fy_local])
+            F_vehicle = R @ F_local
+
+            Fx_vehicle = F_vehicle[0]
+            Fy_vehicle = F_vehicle[1]
+
+            # Accumulate forces
+            Fx_total += Fx_vehicle
+            Fy_total += Fy_vehicle
+
+            # Calculate moment about CG
+            # Mz = r × F (cross product in 2D)
+            Mz_tire = x_tire * Fy_vehicle - y_tire * Fx_vehicle
+            Mz_total += Mz_tire
+
+        return {
+            "Fx_total": Fx_total,
+            "Fy_total": Fy_total,
+            "Mz_total": Mz_total,
+            "method": "rotation_matrix",
+        }
+
+    def compare_methods_bicycle(self, Fyf, Fyr, delta_f, delta_r):
+        """Compare both methods for bicycle model case."""
+
+        # Method 1: Direct moment arms (your current approach)
+        result1 = self.bicycle_model_moment_arms(Fyf, Fyr, delta_f, delta_r)
+
+        # Method 2: Rotation matrix approach
+        tire_forces_local = [
+            (0, Fyf),  # Front tire: only lateral force in tire coordinates
+            (0, Fyr),  # Rear tire: only lateral force in tire coordinates
+        ]
+        tire_positions = [
+            (self.a, 0),  # Front axle position
+            (-self.b, 0),  # Rear axle position
+        ]
+        tire_angles = [delta_f, delta_r]
+
+        result2 = self.rotation_matrix_approach(
+            tire_forces_local, tire_positions, tire_angles
+        )
+
+        return result1, result2
+
+    def four_wheel_example(self, corner_forces, steer_angles):
+        """
+        Example for 4-wheel vehicle where rotation matrix approach is more natural.
+
+        Args:
+            corner_forces: [(Fx_FL, Fy_FL), (Fx_FR, Fy_FR), (Fx_RL, Fy_RL), (Fx_RR, Fy_RR)]
+            steer_angles: [delta_FL, delta_FR, delta_RL, delta_RR]
+        """
+        # Tire positions relative to CG
+        tire_positions = [
+            (self.a, self.track_width / 2),  # Front left
+            (self.a, -self.track_width / 2),  # Front right
+            (-self.b, self.track_width / 2),  # Rear left
+            (-self.b, -self.track_width / 2),  # Rear right
+        ]
+
+        return self.rotation_matrix_approach(
+            corner_forces, tire_positions, steer_angles
+        )
+
+    def visualize_force_transformation(
+        self, Fyf=5000, Fyr=3000, delta_f=0.1, delta_r=0
+    ):
+        """Visualize the force transformation process."""
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+        # Left plot: Vehicle layout with forces
+        ax1.set_aspect("equal")
+
+        # Draw vehicle outline
+        vehicle_width = 0.8
+        vehicle_outline = np.array(
+            [
+                [-self.b, -vehicle_width / 2],
+                [self.a, -vehicle_width / 2],
+                [self.a, vehicle_width / 2],
+                [-self.b, vehicle_width / 2],
+                [-self.b, -vehicle_width / 2],
+            ]
+        )
+        ax1.plot(vehicle_outline[:, 0], vehicle_outline[:, 1], "k-", linewidth=2)
+
+        # Draw CG
+        ax1.plot(0, 0, "ro", markersize=8, label="CG")
+
+        # Draw tire forces
+        scale = 1e-4  # Scale factor for force visualization
+
+        # Front tire force
+        Fx_f = -Fyf * np.sin(delta_f)  # Small angle: Fx ≈ -Fy * δ
+        Fy_f = Fyf * np.cos(delta_f)  # Small angle: Fy ≈ Fy * 1
+
+        ax1.arrow(
+            self.a,
+            0,
+            Fx_f * scale,
+            Fy_f * scale,
+            head_width=0.1,
+            head_length=0.1,
+            fc="blue",
+            ec="blue",
+            label=f"Front: {Fyf:.0f}N",
+        )
+
+        # Rear tire force
+        Fx_r = -Fyr * np.sin(delta_r)
+        Fy_r = Fyr * np.cos(delta_r)
+
+        ax1.arrow(
+            -self.b,
+            0,
+            Fx_r * scale,
+            Fy_r * scale,
+            head_width=0.1,
+            head_length=0.1,
+            fc="red",
+            ec="red",
+            label=f"Rear: {Fyr:.0f}N",
+        )
+
+        # Show moment arms
+        ax1.plot(
+            [0, self.a], [0, 0], "g--", alpha=0.5, label=f"Moment arm: {self.a:.1f}m"
+        )
+        ax1.plot([0, -self.b], [0, 0], "g--", alpha=0.5)
+
+        ax1.set_xlabel("Longitudinal (m)")
+        ax1.set_ylabel("Lateral (m)")
+        ax1.set_title("Vehicle Forces and Moment Arms")
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
+
+        # Right plot: Method comparison
+        result1, result2 = self.compare_methods_bicycle(Fyf, Fyr, delta_f, delta_r)
+
+        methods = ["Moment Arms", "Rotation Matrix"]
+        fy_values = [result1["Fy_total"], result2["Fy_total"]]
+        mz_values = [result1["Mz_total"], result2["Mz_total"]]
+
+        x = np.arange(len(methods))
+        width = 0.35
+
+        ax2.bar(x - width / 2, fy_values, width, label="Lateral Force (N)", alpha=0.7)
+        ax2.bar(x + width / 2, mz_values, width, label="Yaw Moment (Nm)", alpha=0.7)
+
+        ax2.set_xlabel("Method")
+        ax2.set_ylabel("Force/Moment")
+        ax2.set_title("Method Comparison")
+        ax2.set_xticks(x)
+        ax2.set_xticklabels(methods)
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        return fig
+
+    def demonstrate_sign_conventions(self):
+        """Demonstrate sign conventions for left-turn positive."""
+
+        print("Sign Convention Analysis (Left-turn positive):")
+        print("=" * 50)
+
+        # Test case: Left turn with front steering
+        Fyf = 5000  # Positive lateral force (leftward)
+        Fyr = -2000  # Negative lateral force (rightward, for stability)
+        delta_f = 0.05  # Small left steer angle (positive)
+
+        result1, result2 = self.compare_methods_bicycle(Fyf, Fyr, delta_f, 0)
+
+        print(f"Front tire force: {Fyf:+.0f} N (leftward)")
+        print(f"Rear tire force: {Fyr:+.0f} N (rightward)")
+        print(f"Front steer angle: {delta_f:+.3f} rad (left)")
+        print()
+
+        print("Results:")
+        print(f"Total lateral force: {result1['Fy_total']:+.0f} N")
+        print(f"Yaw moment (moment arms): {result1['Mz_total']:+.0f} Nm")
+        print(f"Yaw moment (rotation matrix): {result2['Mz_total']:+.0f} Nm")
+        print()
+
+        if result1["Mz_total"] > 0:
+            print("✓ Positive yaw moment → Left turn (counter-clockwise)")
+        else:
+            print("✗ Negative yaw moment → Right turn (clockwise)")
+
+        return result1, result2
+
+
+# Example usage and validation
+if __name__ == "__main__":
+    # Vehicle parameters (similar to your model)
+    vehicle_params = {
+        "a": 1.4,  # Front axle to CG
+        "b": 1.6,  # Rear axle to CG
+        "track_width": 1.6,
+    }
+
+    transformer = TireForceTransformation(vehicle_params)
+
+    # Demonstrate sign conventions
+    transformer.demonstrate_sign_conventions()
+
+    # Create visualization
+    fig = transformer.visualize_force_transformation()
+    plt.show()
+
+    # 4-wheel example
+    print("\n4-Wheel Vehicle Example:")
+    print("=" * 30)
+
+    corner_forces = [
+        (0, 2500),  # FL: Lateral force only
+        (0, 2500),  # FR: Lateral force only
+        (0, -1000),  # RL: Stabilizing force
+        (0, -1000),  # RR: Stabilizing force
+    ]
+
+    steer_angles = [0.05, 0.05, 0, 0]  # Front wheels steered left
+
+    result_4w = transformer.four_wheel_example(corner_forces, steer_angles)
+    print(f"Total lateral force: {result_4w['Fy_total']:+.0f} N")
+    print(f"Total yaw moment: {result_4w['Mz_total']:+.0f} Nm")
