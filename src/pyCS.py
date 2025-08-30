@@ -20,8 +20,8 @@ CS50p Course: Introduction to Programming with Python
 # import argparse
 
 # %% Functions and Variables Examples
-"""# combined functions (readability, length of line, simplify, etc.)
-name = input("What is your name? \n").strip().title()  # input expects a string
+# combined functions (readability, length of line, simplify, etc.)
+""" name = input("What is your name? \n").strip().title()  # input expects a string
 
 # split into first and last name
 first_name, last_name = name.split(" ")  # assign the first and last name to variables
@@ -31,7 +31,10 @@ print("Hello, {}!".format(first_name))  # another way to say hello to the user
 print("Hello, " + first_name + "!")  # yet another way to say hello to the user
 print(
     f"Hello, {first_name}! (most common way)"
-)  # yet another way to say hello to the user"""
+)  # yet another way to say hello to the user
+
+place = input("what place to do live? \n").strip().title()
+print(f"{first_name} lives in {place}") """
 
 # %% Calculator
 """ x = float(input("What's x? "))
@@ -174,15 +177,14 @@ for student, house in students.items():  # iterate over the dictionary
 ]
 
 for student in students:
-    print(f"{student['name']}, {student['house']}, {student['patronus']}")
- """
+    print(f"{student['name']}, {student['house']}, {student['patronus'].capitalize()}") """
 
 
 # %% MARIO GAME
 """ def main():
     height = get_height()
-    #    draw_pyramid(height)
-    print_square(height)
+    draw_pyramid(height)
+    # print_square(height)
 
 
 def get_height():
@@ -195,10 +197,9 @@ def get_height():
             pass
 
 
-"""
-""" def draw_pyramid(height):
+def draw_pyramid(height):
     for i in range(height):
-        print(" " * (height - i - 1) + "#" * (i + 1)) 
+        print(" " * (height - i - 1) + "#" * (i + 1))
 
 
 def print_square(size):
@@ -751,7 +752,7 @@ print(gryffindors) """
 
 
 # %% SLEEP: Generators with YIELD Keyword
-def main():
+""" def main():
     n = int(input("What's n: "))
     for s in sheep(n):
         print(s)
@@ -763,4 +764,14 @@ def sheep(n):
 
 
 if __name__ == "__main__":
-    main()
+    main() """
+
+
+# %% Recursion
+""" def multiply(a, b):
+    if b == 0:
+        return 0
+    return a + multiply(a, b - 1)
+
+
+print(multiply(3, 4))  # `12` """
