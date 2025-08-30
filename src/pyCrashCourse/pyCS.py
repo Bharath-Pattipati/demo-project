@@ -3,6 +3,10 @@ CS50p Course: Introduction to Programming with Python
 """
 
 # %% Import libraries
+from math import sqrt  # import specific function from a library
+
+# import this # The Zen of Python, by Tim Peters
+
 # from random import choice, randint, shuffle
 # import statistics as stats
 # import random
@@ -775,3 +779,37 @@ if __name__ == "__main__":
 
 
 print(multiply(3, 4))  # `12` """
+
+# %% Stripping Whitespace and displaying large numbers
+""" text = input("Text: ")
+print(text.strip())
+
+largeNum = 14_000_000_000
+print(largeNum) """
+
+# %% List Examples
+""" bicycles = ["Trek", "Cannondale", "Redline", "Specialized"]
+print(bicycles[-1])  # print last item in the list
+
+bicycles[0] = "Giant"  # change first item in the list
+print(bicycles)
+
+bicycles.append("Schwinn")  # add item to the end of the list
+print(bicycles) """
+
+""" magicians = ["alice", "david", "carolina", "zeus"]
+for magician in sorted(magicians):
+    print(magician.title() + ", that was a great trick!")
+
+magicians.pop()
+print(magicians) """
+
+# %% List comprehension and slicing
+squares = [value**2 for value in range(1, 11)]
+print(f"Squares: {squares}")
+
+sqrtValues = [sqrt(value) for value in range(1, 11)]
+print(f"Sum of sqrt: {sum(sqrtValues)}")
+
+cubes = [v**3 for v in range(1, 11)]
+print(f"Cubes: {cubes[:]}")
