@@ -805,11 +805,11 @@ magicians.pop()
 print(magicians) """
 
 # %% List comprehension and slicing
-squares = [value**2 for value in range(1, 11)]
+""" squares = [value**2 for value in range(1, 11)]
 print(f"Squares: {squares}")
 
 sqrtValues = [sqrt(value) for value in range(1, 11)]
 print(f"Sum of sqrt: {sum(sqrtValues)}")
 
 cubes = [v**3 for v in range(1, 11)]
-print(f"Cubes: {cubes[:]}")
+print(f"Cubes: {cubes[:5]}") """
