@@ -3,7 +3,7 @@ CS50p Course: Introduction to Programming with Python
 """
 
 # %% Import libraries
-from math import sqrt  # import specific function from a library
+# from math import sqrt  # import specific function from a library
 
 # import this # The Zen of Python, by Tim Peters
 
@@ -813,3 +813,73 @@ print(f"Sum of sqrt: {sum(sqrtValues)}")
 
 cubes = [v**3 for v in range(1, 11)]
 print(f"Cubes: {cubes[:5]}") """
+
+# %% Dictionary Examples
+
+""" # dictionary: 3 major rivers and countires in which they flow
+rivers = {
+    "nile": "egypt",
+    "amazon": "brazil",
+    "yangtze": "china",
+}
+
+for r in rivers:
+    print(f"The {r.title()} runs through {rivers[r].title()}")
+
+for r in rivers.keys():
+    print(r)
+
+for r in rivers.values():
+    print(r)
+
+# Make aliens dictionary
+aliens = []
+
+for a in range(30):
+    new_alien = {"color": "green", "points": 5, "speed": "slow"}
+    aliens.append(new_alien)
+
+for alien in aliens[:5]:
+    print(alien)
+print("...............") """
+
+# %% Interacting with user
+""" age = input("How old are you? ")
+
+if int(age) >= 18:
+    print("You are old enough to vote!")
+else:
+    print("You are not old enough to vote!") """
+
+""" cnt = 0
+while cnt < 3:
+    print(f"Count: {cnt}")
+    cnt += 1
+print("Done") """
+
+""" active = True
+while active:
+    message = input("Tell me something: ")
+    if message == "quit":
+        active = False
+    else:
+        print(message) """
+
+# filling dictionary using while loop user input
+responses = {}
+polling_active = True
+while polling_active:
+    name = input("what is your name? ")
+    response = input("which city would you like to visit? ")
+
+    responses[name] = response
+
+    repeat = input("Would you like to let another person respond? (yes/no) ")
+    if repeat == "no" or repeat == "n":
+        polling_active = False
+
+print("\n--- Poll Results ---")
+for name, response in responses.items():
+    print(f"{name} would like to visit {response}.")
+
+# %%
