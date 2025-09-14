@@ -22,6 +22,7 @@ CS50p Course: Introduction to Programming with Python
 
 # import re
 # import argparse
+from pizza import make_pizza as mp
 
 # %% Functions and Variables Examples
 # combined functions (readability, length of line, simplify, etc.)
@@ -866,7 +867,7 @@ while active:
         print(message) """
 
 # filling dictionary using while loop user input
-responses = {}
+""" responses = {}
 polling_active = True
 while polling_active:
     name = input("what is your name? ")
@@ -880,6 +881,27 @@ while polling_active:
 
 print("\n--- Poll Results ---")
 for name, response in responses.items():
-    print(f"{name} would like to visit {response}.")
+    print(f"{name} would like to visit {response}.") """
 
-# %%
+
+# %% FUNCTIONS
+""" def favorite_book(title):
+    print(f"One of my favorite books is {title.title()}.")
+
+
+favorite_book("alice in wonderland") """
+
+
+""" def build_person(first_name, last_name, age=None):
+    person = {"first": first_name.title(), "last": last_name.title()}
+    if age:
+        person["age"] = age
+    return person
+
+
+musician = build_person("jimi", "hendrix", age=27)
+print(musician) """
+
+
+# Arbitrary number of arguments and creating MODULE pizza.py
+mp(16, "peppers", "onions", "mushrooms")
