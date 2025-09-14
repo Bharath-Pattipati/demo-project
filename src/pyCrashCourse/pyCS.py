@@ -22,7 +22,8 @@ CS50p Course: Introduction to Programming with Python
 
 # import re
 # import argparse
-from pizza import make_pizza as mp
+
+# from pizza import make_pizza as mp
 
 # %% Functions and Variables Examples
 # combined functions (readability, length of line, simplify, etc.)
@@ -903,5 +904,31 @@ musician = build_person("jimi", "hendrix", age=27)
 print(musician) """
 
 
-# Arbitrary number of arguments and creating MODULE pizza.py
-mp(16, "peppers", "onions", "mushrooms")
+""" # Arbitrary number of arguments and creating MODULE pizza.py
+mp(16, "peppers", "onions", "mushrooms") """
+
+# %% CLASSES
+
+
+# Simple Class
+class Restaurant:
+    """A simple attempt to model a restaurant."""
+
+    def __init__(self, restaurant_name, cuisine_type):
+        self.restaurant_name = restaurant_name
+        self.cuisine_type = cuisine_type
+
+    def describe_restaurant(self):
+        print(f"{self.restaurant_name} serves wonderful {self.cuisine_type} cuisine.")
+
+    def open_restaurant(self):
+        print(f"{self.restaurant_name} is open now!")
+
+
+my_restaurant = Restaurant("The Gourmet Kitchen", "Italian")
+print(
+    f"My restaurant name is {my_restaurant.restaurant_name}."
+)  # attributes of the class
+print(f"My restaurant serves {my_restaurant.cuisine_type} cuisine.")
+my_restaurant.describe_restaurant()  # methods of the class
+my_restaurant.open_restaurant()
