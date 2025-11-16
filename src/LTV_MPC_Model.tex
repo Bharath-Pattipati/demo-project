@@ -1,0 +1,124 @@
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning,shapes,arrows.meta,calc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\begin{document}
+
+\tikzset{
+    box/.style={
+        rectangle,
+        draw=black,
+        very thick,
+        text width=7cm,
+        minimum height=5cm,
+        align=center,
+        rounded corners=5pt,
+        fill=#1!20,
+        font=\sffamily
+    },
+    arrow/.style={
+        -Stealth,
+        line width=2pt,
+        #1
+    },
+    label/.style={
+        rectangle,
+        draw=#1,
+        very thick,
+        fill=#1!10,
+        font=\small\bfseries\sffamily,
+        inner sep=5pt,
+        rounded corners=3pt
+    },
+    stepnum/.style={
+        circle,
+        draw=black,
+        very thick,
+        fill=#1!60,
+        text=white,
+        font=\Large\bfseries,
+        minimum size=0.8cm
+    }
+}
+
+\begin{tikzpicture}[node distance=3.5cm and 6cm]
+
+% Step 1: Nonlinear System (top left)
+\node[box=purple] (step1) {
+    {\Large\textbf{Step 1: Nonlinear System}}\\[0.5cm]
+    \textit{Continuous-time dynamics:}\\[0.4cm]
+    $\boxed{\dot{x}(t) = f(x(t), u(t))}$\\[0.6cm]
+    \begin{tabular}{@{}l@{}}
+        $\bullet$ $x(t) \in \mathbb{R}^n$: state vector\\[0.15cm]
+        $\bullet$ $u(t) \in \mathbb{R}^m$: control input\\[0.15cm]
+        $\bullet$ $f$: nonlinear function
+    \end{tabular}\\[0.3cm]
+};
+\node[stepnum=purple, above left=0.3cm and -0.3cm of step1.north west] {1};
+
+% Step 2: Nominal Trajectory (top right)
+\node[box=blue, right=of step1] (step2) {
+    {\Large\textbf{Step 2: Nominal Trajectory}}\\[0.5cm]
+    \textit{Reference solution:}\\[0.4cm]
+    $\boxed{\dot{\bar{x}}(t) = f(\bar{x}(t), \bar{u}(t))}$\\[0.2cm]
+    $\bar{x}(t_0) = x_0$\\[0.5cm]
+    \begin{tabular}{@{}l@{}}
+        $\bullet$ $(\bar{x}(t), \bar{u}(t))$: nominal path\\[0.15cm]
+        $\bullet$ Over horizon $[t_0, t_0+T]$\\[0.15cm]
+        $\bullet$ Methods: RK4, ode45, etc.
+    \end{tabular}\\[0.3cm]
+};
+\node[stepnum=blue, above left=0.3cm and -0.3cm of step2.north west] {2};
+
+% Step 3: Linearized System (bottom right)
+\node[box=cyan, below=of step2] (step3) {
+    {\Large\textbf{Step 3: Linearized System}}\\[0.5cm]
+    \textit{Time-varying linear dynamics:}\\[0.4cm]
+    $\boxed{\delta\dot{x}(t) = A(t)\delta x(t) + B(t)\delta u(t)}$\\[0.5cm]
+    \textit{Jacobian matrices:}\\[0.3cm]
+    \begin{tabular}{@{}l@{}}
+        $\bullet$ $A(t) = \frac{\partial f}{\partial x}\Big|_{(\bar{x}(t), \bar{u}(t))}$\\[0.3cm]
+        $\bullet$ $B(t) = \frac{\partial f}{\partial u}\Big|_{(\bar{x}(t), \bar{u}(t))}$
+    \end{tabular}\\[0.3cm]
+};
+\node[stepnum=cyan, above left=0.3cm and -0.3cm of step3.north west] {3};
+
+% Step 4: Discrete LTV System (bottom left)
+\node[box=green, left=of step3] (step4) {
+    {\Large\textbf{Step 4: Discrete LTV System}}\\[0.5cm]
+    \textit{Final approximation:}\\[0.4cm]
+    $\boxed{\delta x(k+1) = A_k\delta x(k) + B_k\delta u(k)}$\\[0.6cm]
+    \begin{tabular}{@{}l@{}}
+        $\bullet$ $\delta x(k) = x(k) - \bar{x}(k)$\\[0.15cm]
+        $\bullet$ $\delta u(k) = u(k) - \bar{u}(k)$\\[0.15cm]
+        $\bullet$ $k$: discrete time index\\[0.15cm]
+        $\bullet$ $\Delta t$: sampling time
+    \end{tabular}\\[0.3cm]
+};
+\node[stepnum=green, above left=0.3cm and -0.3cm of step4.north west] {4};
+
+% Arrow 1 -> 2 (Horizontal)
+\draw[arrow=blue!70!black] (step1.east) -- (step2.west);
+\node[label=blue, above=0.5cm] at ($(step1.east)!0.5!(step2.west)$) {Solve ODEs};
+\node[font=\small\itshape, below=0.3cm] at ($(step1.east)!0.5!(step2.west)$) {Integration};
+
+% Arrow 2 -> 3 (Vertical down)
+\draw[arrow=cyan!70!black] (step2.south) -- (step3.north);
+\node[label=cyan, right=0.5cm] at ($(step2.south)!0.5!(step3.north)$) {Linearization};
+\node[font=\small\itshape, left=0.3cm] at ($(step2.south)!0.5!(step3.north)$) {Compute Jacobians};
+
+% Arrow 3 -> 4 (Horizontal left)
+\draw[arrow=green!70!black] (step3.west) -- (step4.east);
+\node[label=green, above=0.5cm] at ($(step3.west)!0.5!(step4.east)$) {Discretization};
+\node[font=\small\itshape, below=0.3cm] at ($(step3.west)!0.5!(step4.east)$) {Time Sampling};
+
+% Arrow 4 -> 1 (Vertical up - APPROXIMATION)
+\draw[arrow=red, line width=2.5pt] (step4.north) -- (step1.south);
+\node[label=red, left=0.5cm, text=red] at ($(step4.north)!0.5!(step1.south)$) {\textbf{APPROXIMATION}};
+\node[font=\small\itshape, right=0.3cm] at ($(step4.north)!0.5!(step1.south)$) {Discrete $\approx$ Nonlinear};
+
+\end{tikzpicture}
+
+\end{document}
